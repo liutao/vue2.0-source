@@ -10,7 +10,7 @@ vue 2.2.6源码分析
 [从小栗子查看Vue的生命周期](https://github.com/liutaofe/vue2.0-source/issues/6)
 
 
-一下是整理一些比较零散的数据：
+以下是整理一些比较零散的数据：
 
 [Vue的静态方法和属性](https://github.com/liutaofe/vue2.0-source/issues/3)
 
