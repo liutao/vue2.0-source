@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script type="text/javascript" src="./js/observer.js" ></script>
+</head>
+<body>
+<div id="test"></div>
+<script type="text/javascript">
+	var obj = {
+		a: 1,
+		b: 2,
+		c: 3
+	}
+	Object.keys(obj).forEach(function(key){
+		new Observer(obj, key, obj[key])
+	});
+	new Watcher(function(){
+		document.querySelector("#test").innerHTML = obj.a;
+	})
+</script>
+</body>
+</html>
