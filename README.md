@@ -10,6 +10,7 @@ vue 2.2.6源码分析
 [从小栗子查看Vue的生命周期](https://github.com/liutaofe/vue2.0-source/issues/6)
 
 [双向数据绑定](https://github.com/liutaofe/vue2.0-source/blob/master/%E5%8F%8C%E5%90%91%E6%95%B0%E6%8D%AE%E7%BB%91%E5%AE%9A.md)
+
 以下是整理一些比较零散的数据：
 
 [Vue的静态方法和属性](https://github.com/liutaofe/vue2.0-source/issues/3)
