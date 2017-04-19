@@ -1,5 +1,7 @@
 vue源码根目录下有很多文件夹，下面先列出我知道的几个，后续会补充。
+
 Vue
+
 &nbsp;&nbsp;&nbsp;&nbsp;|--  build  打包相关的配置文件，其中最重要的是config.js。主要是根据不同的入口，打包为不同的文件。
 
 &nbsp;&nbsp;&nbsp;&nbsp;|--  dist 打包之后文件所在位置
