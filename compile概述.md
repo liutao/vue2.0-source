@@ -53,7 +53,25 @@ export { compile, compileToFunctions }
 
 * `modules`。包括`klass`和`style`，对模板中类和样式的解析。
 
-* `directives`。这里包括`model`（`v-model`）、`html`（`v-html`）、`text`(`v-text`)三个
+* `directives`。这里包括`model`（`v-model`）、`html`（`v-html`）、`text`(`v-text`)三个指令。
+
+* `isPreTag`。是否是`pre`标签。
+
+* `isUnaryTag`。是否是单标签，比如`img`、`input`、`iframe`等。
+
+* `mustUseProp`。需要使用`props`绑定的属性，比如`value`、`selected`等。
+
+* `canBeLeftOpenTag`。可以不闭合的标签，比如`tr`、`td`等。
+
+* `isReservedTag`。是否是保留标签，`html`标签和`SVG`标签。
+
+* `getTagNamespace`。获取命名空间，`svg`和`math`。
+
+* `staticKeys`。静态关键词，包括`staticClass,staticStyle`。
+
+
+
+
 
 
 
