@@ -1,0 +1,66 @@
+我们直接来看`src/compiler/parser/index.js`文件中的`parse`函数，其它内容暂且不管，我们看到该函数中主要执行了`parseHTML`函数，从函数名我们很直观的可以猜到，该函数用于解析`HTML`模板。
+
+打开`src/compiler/parser/html-parser.js`文件，首先是定义了一堆密密麻麻的正则表达式。相信很多人看到这些复杂的正则都一个头两个大。由于我的水平也比较有限，马马虎虎带大家过一下这些正则。
+
+前面几行是定义了匹配属性的正则。
+
+```JavaScript
+// Regular Expressions for parsing tags and attributes
+const singleAttrIdentifier = /([^\s"'<>/=]+)/
+const singleAttrAssign = /(?:=)/
+const singleAttrValues = [
+  // attr value double quotes
+  /"([^"]*)"+/.source,
+  // attr value, single quotes
+  /'([^']*)'+/.source,
+  // attr value, no quotes
+  /([^\s"'=<>`]+)/.source
+]
+const attribute = new RegExp(
+  '^\\s*' + singleAttrIdentifier.source +
+  '(?:\\s*(' + singleAttrAssign.source + ')' +
+  '\\s*(?:' + singleAttrValues.join('|') + '))?'
+)
+```
+
+第一个`singleAttrIdentifier`比较简单，它是匹配一个或多个非空白字符，非`"'<>/=`字符，并捕获匹配到的内容，主要用于匹配属性名。
+
+例如：
+
+```JavaScript
+"/abc'de<".match(singleAttrIdentifier)
+// ["abc", "abc", index: 1, input: "/abc'de<"]
+```
+
+第二个`singleAttrAssign`，更简单，就是匹配一个`=`，但不捕获。
+
+第三个`singleAttrValues`主要用于匹配属性值，因为我们的属性值可以包含在单引号或双引号内，也可以不用引号。所以这里分为三种情况：
+
+1、双引号括起来`/"([^"]*)"+/.source`。主要是捕获双引号括起来的非`"`内容。
+
+2、单引号括起来`/'([^']*)'+/.source`。主要是捕获双引号括起来的非`'`内容。
+
+3、没有引号`/([^\s"'=<>`]+)/.source`。捕获多个非空白字符或非`"'=<>\``字符的内容。
+
+最后一个是把前三个整合起来，用于匹配一个完整的属性，并且允许属性名、等号、属性值之前可以有多个空白字符。
+
+列举几个符合的例子：
+
+```JavaScript
+"href='https://www.imliutao.com'".match(attribute)
+// ["href='https://www.imliutao.com'", "href", "=", undefined, "https://www.imliutao.com", undefined, index: 0, input: "href='https://www.imliutao.com'"]
+// 上例中把单引号和双引号互换，结果一样
+
+// 我们在属性名、等号、属性值之前加了空格，我们依然可以正确匹配捕获键和值。
+" href = 'https://www.imliutao.com'".match(attribute)
+// [" href = "https://www.imliutao.com"", "href", "=", "https://www.imliutao.com", undefined, undefined, index: 0, input: " href = "https://www.imliutao.com""]
+
+// 去掉属性值的引号
+' href =https://www.imliutao.com'.match(attribute)
+// [" href =https://www.imliutao.com", "href", "=", undefined, undefined, "https://www.imliutao.com", index: 0, input: " href =https://www.imliutao.com"]
+
+```
+上面列出来的三个例子，最终匹配的结果数组中`https://www.imliutao.com`的位置变换了，这是因为我们匹配属性值时有三种情况，3-5依次为双引号、单引号、没有引号的捕获结果。
+
+
+
