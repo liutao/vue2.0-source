@@ -131,3 +131,25 @@ const doctype = /^<!DOCTYPE [^>]+>/i
 const comment = /^<!--/
 const conditionalComment = /^<!\[/
 ```
+-->
+## 编译模板
+
+光看代码，毕竟无聊又生硬，我们还是从一个简单的例子出发，来过一下最基本的流程。
+
+例子如下：
+
+```HTML
+<div id="app">
+	这里是文本<箭头之后的文本
+	<a :href="url" target="_blank" >{{title}}</a>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			url: 'https://www.imliutao.com',
+			title: '刘涛的个人小站'
+		}
+	})
+</script>
+```

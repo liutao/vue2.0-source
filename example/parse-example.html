@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	这里是文本<箭头之后的文本
+	<a :href="url" target="_blank" >{{title}}</a>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			url: 'https://www.imliutao.com',
+			title: '刘涛的个人小站'
+		}
+	})
+</script>
+</body>
+</html>
