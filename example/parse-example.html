@@ -9,13 +9,15 @@
 <div id="app">
 	这里是文本<箭头之后的文本
 	<a :href="url" target="_blank" >{{title}}</a>
+	<img :src="img" />
 </div>
 <script type="text/javascript">
 	var vm = new Vue({
 		el: '#app',
 		data: {
 			url: 'https://www.imliutao.com',
-			title: '刘涛的个人小站'
+			title: '刘涛的个人小站',
+			img: 'https://pic1.zhimg.com/092406f3919e915fffc7ef2f2410e560_is.jpg'
 		}
 	})
 </script>

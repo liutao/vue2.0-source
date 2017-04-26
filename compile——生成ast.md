@@ -1,10 +1,42 @@
-我们直接来看`src/compiler/parser/index.js`文件中的`parse`函数，其它内容暂且不管，我们看到该函数中主要执行了`parseHTML`函数，从函数名我们很直观的可以猜到，该函数用于解析`HTML`模板。
+生成`ast`的函数是`src/compiler/parser/index.js`文件中的`parse`函数，从这里入手，我们一起来看看一段`html`字符串，是如何一步步转换成抽象语法树的。
+
+这一部分会涉及到许许多多的正则匹配，知道每个正则有什么用途，会更加方便之后的分析。
 
 我们打开`src/compiler/parser/html-parser.js`文件来看它的实现。
 
 ## 正则表达式
 
-首先是定义了一堆密密麻麻的正则表达式。相信很多人看到这些复杂的正则都一个头两个大。由于我的水平也比较有限，马马虎虎带大家过一下这些正则。
+### `src/compiler/parser/index.js`
+
+```JavaScript
+export const onRE = /^@|^v-on:/
+export const dirRE = /^v-|^@|^:/
+export const forAliasRE = /(.*?)\s+(?:in|of)\s+(.*)/
+export const forIteratorRE = /\((\{[^}]*\}|[^,]*),([^,]*)(?:,([^,]*))?\)/
+
+const argRE = /:(.*)$/
+const bindRE = /^:|^v-bind:/
+const modifierRE = /\.[^.]+/g
+```
+这一部分的几个正则很简单，我们简单过一下。
+
+`onRE`是匹配`@`或`v-on`开头的属性，也就是我们添加事件的语法。
+
+`dirRE`是匹配`v-`或`@`或`:`开头的属性，即`vue`中的绑定数据或事件的语法。
+
+`forAliasRE`匹配`v-for`中的属性值，比如`item in items`、`(item, index) of items`。
+
+`forIteratorRE`是对`forAliasRE`中捕获的第一部分内容，进行拆解，我们都知道`v-for`中`in|of`前最后可以有三个逗号分隔的参数。
+
+`argRE`匹配并捕获`:`开头的属性。
+
+`bindRE`匹配`:`或`v-bind`开头的属性，即绑定数据的语法。
+
+`modifierRE`是匹配`@click.stop`、`@keyup.enter`等属性中的修饰符。
+
+### `src/compiler/parser/html-parser.js`
+
+这部分内容的正则表达式比较复杂，相信很多人看到这些都一个头两个大。由于我的水平也比较有限，马马虎虎带大家过一下这些正则。
 
 前面几行是定义了匹配属性的正则。
 
@@ -132,6 +164,26 @@ const comment = /^<!--/
 const conditionalComment = /^<!\[/
 ```
 -->
+
+### `src/compiler/parser/text-parser.js`
+
+```JavaScript
+const defaultTagRE = /\{\{((?:.|\n)+?)\}\}/g
+const regexEscapeRE = /[-.*+?^${}()|[\]\/\\]/g
+```
+
+`defaultTagRE`是默认的模板分隔符匹配。
+
+`regexEscapeRE`用于匹配需要转义的字符。
+
+### `src/compiler/parser/filter-parser.js`
+
+```JavaScript
+validDivisionCharRE = /[\w).+\-_$\]]/
+```
+
+这个也比较简单，就是匹配字母数字及列出的字符，具体用途是判断表达式是不是正则时用到，具体我们讲解`filter`时深入分析。
+
 ## 编译模板
 
 光看代码，毕竟无聊又生硬，我们还是从一个简单的例子出发，来过一下最基本的流程。
@@ -142,14 +194,384 @@ const conditionalComment = /^<!\[/
 <div id="app">
 	这里是文本<箭头之后的文本
 	<a :href="url" target="_blank" >{{title}}</a>
+	<img :src="img" />
 </div>
 <script type="text/javascript">
 	var vm = new Vue({
 		el: '#app',
 		data: {
 			url: 'https://www.imliutao.com',
-			title: '刘涛的个人小站'
+			title: '刘涛的个人小站',
+			img: 'https://pic1.zhimg.com/092406f3919e915fffc7ef2f2410e560_is.jpg'
 		}
 	})
 </script>
 ```
+
+我们先看一眼`parse`方法的实现。
+
+```JavaScript
+export function parse (
+  template: string,
+  options: CompilerOptions
+): ASTElement | void {
+  warn = options.warn || baseWarn
+  
+  platformGetTagNamespace = options.getTagNamespace || no  // 获取tag的命名空间，svg或math
+  platformMustUseProp = options.mustUseProp || no // 判断是否需要通过绑定prop来绑定属性
+  platformIsPreTag = options.isPreTag || no  // 是不是pre标签
+  preTransforms = pluckModuleFunction(options.modules, 'preTransformNode') 
+  transforms = pluckModuleFunction(options.modules, 'transformNode') 
+  postTransforms = pluckModuleFunction(options.modules, 'postTransformNode') 
+  delimiters = options.delimiters  // 分隔符
+
+  const stack = []
+  const preserveWhitespace = options.preserveWhitespace !== false
+  let root
+  let currentParent
+  let inVPre = false
+  let inPre = false
+  let warned = false
+
+  function warnOnce (msg) {
+    if (!warned) {
+      warned = true
+      warn(msg)
+    }
+  }
+
+  function endPre (element) {
+    // check pre state
+    if (element.pre) {
+      inVPre = false
+    }
+    if (platformIsPreTag(element.tag)) {
+      inPre = false
+    }
+  }
+
+  parseHTML(template, {
+    warn,
+    expectHTML: options.expectHTML,
+    isUnaryTag: options.isUnaryTag,  // 是否是单标签
+    canBeLeftOpenTag: options.canBeLeftOpenTag,
+    shouldDecodeNewlines: options.shouldDecodeNewlines,
+    start (tag, attrs, unary) {
+      ...
+    },
+
+    end () {
+      ...
+    },
+
+    chars (text: string) {
+      ...
+    }
+  })
+  return root
+}
+```
+
+最开始保存了一系列`options`传入的方法等，这些内容我们在上一篇文章中提到过，这里就不多说了。接着定义了一些变量和内部方法。然后是一个很长很长的函数调用`parseHTML`，对整个模板的解析，都是在这里进行的。
+
+我们来看`parseHTML`的实现。
+
+```JavaScript
+export function parseHTML (html, options) {
+  const stack = []
+  const expectHTML = options.expectHTML
+  const isUnaryTag = options.isUnaryTag || no
+  const canBeLeftOpenTag = options.canBeLeftOpenTag || no
+  let index = 0
+  let last, lastTag
+  while (html) {
+    last = html
+    
+    if (!lastTag || !isPlainTextElement(lastTag)) {
+      let textEnd = html.indexOf('<')
+      if (textEnd === 0) {
+      	... 
+      }
+
+      let text, rest, next
+      if (textEnd >= 0) {
+        rest = html.slice(textEnd)
+        while (
+          !endTag.test(rest) &&
+          !startTagOpen.test(rest) &&
+          !comment.test(rest) &&
+          !conditionalComment.test(rest)
+        ) {
+          // < in plain text, be forgiving and treat it as text
+          next = rest.indexOf('<', 1)
+          if (next < 0) break
+          textEnd += next
+          rest = html.slice(textEnd)
+        }
+        text = html.substring(0, textEnd)
+        advance(textEnd)
+      }
+
+      if (textEnd < 0) {
+        text = html
+        html = ''
+      }
+
+      if (options.chars && text) {
+        options.chars(text)
+      }
+    } else {
+      var stackedTag = lastTag.toLowerCase()
+      var reStackedTag = reCache[stackedTag] || (reCache[stackedTag] = new RegExp('([\\s\\S]*?)(</' + stackedTag + '[^>]*>)', 'i'))
+      var endTagLength = 0
+      var rest = html.replace(reStackedTag, function (all, text, endTag) {
+        endTagLength = endTag.length
+        if (!isPlainTextElement(stackedTag) && stackedTag !== 'noscript') {
+          text = text
+            .replace(/<!--([\s\S]*?)-->/g, '$1')
+            .replace(/<!\[CDATA\[([\s\S]*?)]]>/g, '$1')
+        }
+        if (options.chars) {
+          options.chars(text)
+        }
+        return ''
+      })
+      index += html.length - rest.length
+      html = rest
+      parseEndTag(stackedTag, index - endTagLength, index)
+    }
+
+    if (html === last) {
+      options.chars && options.chars(html)
+      if (process.env.NODE_ENV !== 'production' && !stack.length && options.warn) {
+        options.warn(`Mal-formatted tag at end of template: "${html}"`)
+      }
+      break
+    }
+  }
+
+  // Clean up any remaining tags
+  parseEndTag()
+
+  function advance (n) {
+    ...
+  }
+
+  function parseStartTag () {
+    ...
+  }
+
+  function handleStartTag (match) {
+    ...
+  }
+
+  function parseEndTag (tagName, start, end) {
+    ...
+  }
+}
+```
+
+刚开始也是先定义一堆变量，然后开始了一个大循环。Let us go!
+
+### round one
+
+第一次循环`html`就是我们的模板，`last`用于保存还没有解析的模板部分。`lastTag`为`undefined`，所以`!lastTag`为`true`。`textEnd = html.indexOf('<')`为0。
+
+里面大量用到了`advance`方法，先说一下它是干啥的。
+
+```JavaScript
+  function advance (n) {
+    index += n
+    html = html.substring(n)
+  }
+```
+它只是把`html`从`n`位置开始截取，并且记录索引`index`的位置。
+
+```JavaScript
+// 过滤掉注释，doctype等
+// Comment:
+if (comment.test(html)) {
+  const commentEnd = html.indexOf('-->')
+
+  if (commentEnd >= 0) {
+    advance(commentEnd + 3)
+    continue
+  }
+}
+```
+首先过滤`<!--`和`-->`注释的内容。
+
+```
+// http://en.wikipedia.org/wiki/Conditional_comment#Downlevel-revealed_conditional_comment
+if (conditionalComment.test(html)) {
+  const conditionalEnd = html.indexOf(']>')
+
+  if (conditionalEnd >= 0) {
+    advance(conditionalEnd + 2)
+    continue
+  }
+}
+
+```
+然后过滤`<![`和`]>`注释的内容。
+
+```JavaScript
+// Doctype:
+const doctypeMatch = html.match(doctype)
+if (doctypeMatch) {
+  advance(doctypeMatch[0].length)
+  continue
+}
+
+```
+
+接着过滤文档类型标示的字符串。以上内容我们模板都没有，所以直接跳过。
+
+```JavaScript
+const endTagMatch = html.match(endTag)
+
+if (endTagMatch) {
+  const curIndex = index
+  advance(endTagMatch[0].length)
+  parseEndTag(endTagMatch[1], curIndex, index)
+  continue
+}
+```
+`endTag`匹配结束的标签，这里匹配结果为`null`。
+
+```JavaScript
+const startTagMatch = parseStartTag()
+if (startTagMatch) {
+  handleStartTag(startTagMatch)
+  continue
+}
+```
+这里执行了`parseStartTag`函数。我们看看它做了什么。
+
+```JavaScript
+  function parseStartTag () {
+    // 匹配标签名
+    const start = html.match(startTagOpen)
+    if (start) {
+      const match = {
+        tagName: start[1],
+        attrs: [],
+        start: index
+      }
+      advance(start[0].length)
+      let end, attr
+
+      // 匹配起始标签内的属性
+      while (!(end = html.match(startTagClose)) && (attr = html.match(attribute))) {
+        advance(attr[0].length)
+        match.attrs.push(attr)
+      }
+      // 是不是单标签
+      if (end) {
+        match.unarySlash = end[1]
+        advance(end[0].length)
+        match.end = index
+        return match
+      }
+    }
+  }
+```
+`html.match(startTagOpen)`返回内容如下：
+
+```JavaScript
+["<div", "div", index: 0, input: "<div id="app">↵	这里是文本&lt;箭头之后的文本↵	<a :href="url" t…t="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]
+```
+此时`start`是一个数组，`match`就是：
+
+```JavaScript
+match = {
+	tagName: "div",
+	attrs: [],
+	start: 0 // index是parseHTML内部全局变量
+}
+```
+`advance(start[0].length)`后`html`截去前四个字符。
+
+`while`循环中主要是匹配属性知道起始标签结束，我们这里只有一个`id="app"`。
+
+`end`匹配结果如下：
+
+```JavaScript
+[">", "", index: 0, input: ">↵	这里是文本&lt;箭头之后的文本↵	<a :href="url" target="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]
+```
+所以最终`match`如下：
+
+```JavaScript
+match = {
+	tagName: "div",
+	attrs: [[" id="app"", "id", "=", "app", undefined, undefined, index: 0, input: " id="app">↵	这里是文本&lt;箭头之后的文本↵	<a :href="url" target="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]],
+	start: 0,
+	end: 14,
+	unarySlash: ""
+}
+```
+
+之后会把`match`传给`handleStartTag`函数处理。
+
+```JavaScript
+  function handleStartTag (match) {
+    const tagName = match.tagName
+    const unarySlash = match.unarySlash
+
+    if (expectHTML) {
+      if (lastTag === 'p' && isNonPhrasingTag(tagName)) {
+        parseEndTag(lastTag)
+      }
+      if (canBeLeftOpenTag(tagName) && lastTag === tagName) {
+        parseEndTag(tagName)
+      }
+    }
+
+    const unary = isUnaryTag(tagName) || tagName === 'html' && lastTag === 'head' || !!unarySlash
+
+    const l = match.attrs.length
+    const attrs = new Array(l)
+    for (let i = 0; i < l; i++) {
+      const args = match.attrs[i]
+      // hackish work around FF bug https://bugzilla.mozilla.org/show_bug.cgi?id=369778
+      if (IS_REGEX_CAPTURING_BROKEN && args[0].indexOf('""') === -1) {
+        if (args[3] === '') { delete args[3] }
+        if (args[4] === '') { delete args[4] }
+        if (args[5] === '') { delete args[5] }
+      }
+      const value = args[3] || args[4] || args[5] || ''
+      attrs[i] = {
+        name: args[1],
+        value: decodeAttr(
+          value,
+          options.shouldDecodeNewlines
+        )
+      }
+    }
+
+    if (!unary) {
+      stack.push({ tag: tagName, lowerCasedTag: tagName.toLowerCase(), attrs: attrs })
+      lastTag = tagName
+    }
+
+    if (options.start) {
+      options.start(tagName, attrs, unary, match.start, match.end)
+    }
+  }
+```
+
+细节大家自己看，经过循环处理：
+
+```JavaScript
+attrs = [{name: "id", value: "app"}]
+stack = [{
+	attrs,
+	lowerCasedTag: "div",
+	tag: "div"
+}]
+lastTag = "div"
+```
+
+我们在`parse`中传入了`start`函数，接着看：
+
+未完待续。。。
