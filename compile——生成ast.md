@@ -572,6 +572,128 @@ stack = [{
 lastTag = "div"
 ```
 
-我们在`parse`中传入了`start`函数，接着看：
+我们在`parse`中传入了`start`函数，接着会执行`start`函数：
 
-未完待续。。。
+```JavaScript
+    start (tag, attrs, unary) {
+      // 获取命名空间
+      const ns = (currentParent && currentParent.ns) || platformGetTagNamespace(tag)
+
+      if (isIE && ns === 'svg') {
+        attrs = guardIESVGBug(attrs)
+      }
+
+      const element: ASTElement = {
+        type: 1,
+        tag,
+        attrsList: attrs,
+        attrsMap: makeAttrsMap(attrs),
+        parent: currentParent,
+        children: []
+      }
+      if (ns) {
+        element.ns = ns
+      }
+
+      ...
+
+      // apply pre-transforms
+      for (let i = 0; i < preTransforms.length; i++) {
+        preTransforms[i](element, options)
+      }
+
+      // v-pre指令来标识该元素和子元素不用编译
+      if (!inVPre) {
+        processPre(element)
+        if (element.pre) {
+          inVPre = true
+        }
+      }
+      if (platformIsPreTag(element.tag)) {
+        inPre = true
+      }
+      if (inVPre) {
+        processRawAttrs(element)
+      } else {
+        processFor(element)
+        processIf(element)
+        processOnce(element)
+        processKey(element)
+
+        // determine whether this is a plain element after
+        // removing structural attributes
+        element.plain = !element.key && !attrs.length
+
+        processRef(element)
+        processSlot(element)
+        processComponent(element)
+        for (let i = 0; i < transforms.length; i++) {
+          transforms[i](element, options)
+        }
+        processAttrs(element)
+      }
+
+      ...
+
+      // tree management
+      if (!root) {
+        root = element
+        checkRootConstraints(root)
+      } else if (!stack.length) {
+        // allow root elements with v-if, v-else-if and v-else
+        if (root.if && (element.elseif || element.else)) {
+          checkRootConstraints(element)
+          addIfCondition(root, {
+            exp: element.elseif,
+            block: element
+          })
+        } else if (process.env.NODE_ENV !== 'production') {
+          warnOnce(
+            `Component template should contain exactly one root element. ` +
+            `If you are using v-if on multiple elements, ` +
+            `use v-else-if to chain them instead.`
+          )
+        }
+      }
+      if (currentParent && !element.forbidden) {
+        if (element.elseif || element.else) {
+          processIfConditions(element, currentParent)
+        } else if (element.slotScope) { // scoped slot
+          currentParent.plain = false
+          const name = element.slotTarget || '"default"'
+          ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
+        } else {
+          currentParent.children.push(element)
+          element.parent = currentParent
+        }
+      }
+      if (!unary) {
+        currentParent = element
+        stack.push(element)
+      } else {
+        endPre(element)
+      }
+      // apply post-transforms
+      for (let i = 0; i < postTransforms.length; i++) {
+        postTransforms[i](element, options)
+      }
+    }
+```
+
+这部分代码比较长，且比较核心，我们慢慢讲解：
+
+1、 定义基本的ast结构
+
+2、 对ast进行预处理(`preTransforms`)
+
+3、 解析`v-pre`、`v-if`、`v-for`、`v-once`、`slot`、`key`、`ref`等指令。
+
+4、 对ast处理(`transforms`)
+
+5、 解析`v-bind`、`v-on`以及普通属性
+
+6、 `v-else`等处理
+
+7、 模板元素父子关系的建立
+
+8、对ast后处理(`postTransforms`)
