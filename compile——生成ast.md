@@ -285,69 +285,7 @@ export function parseHTML (html, options) {
   let index = 0
   let last, lastTag
   while (html) {
-    last = html
-    
-    if (!lastTag || !isPlainTextElement(lastTag)) {
-      let textEnd = html.indexOf('<')
-      if (textEnd === 0) {
-      	... 
-      }
-
-      let text, rest, next
-      if (textEnd >= 0) {
-        rest = html.slice(textEnd)
-        while (
-          !endTag.test(rest) &&
-          !startTagOpen.test(rest) &&
-          !comment.test(rest) &&
-          !conditionalComment.test(rest)
-        ) {
-          // < in plain text, be forgiving and treat it as text
-          next = rest.indexOf('<', 1)
-          if (next < 0) break
-          textEnd += next
-          rest = html.slice(textEnd)
-        }
-        text = html.substring(0, textEnd)
-        advance(textEnd)
-      }
-
-      if (textEnd < 0) {
-        text = html
-        html = ''
-      }
-
-      if (options.chars && text) {
-        options.chars(text)
-      }
-    } else {
-      var stackedTag = lastTag.toLowerCase()
-      var reStackedTag = reCache[stackedTag] || (reCache[stackedTag] = new RegExp('([\\s\\S]*?)(</' + stackedTag + '[^>]*>)', 'i'))
-      var endTagLength = 0
-      var rest = html.replace(reStackedTag, function (all, text, endTag) {
-        endTagLength = endTag.length
-        if (!isPlainTextElement(stackedTag) && stackedTag !== 'noscript') {
-          text = text
-            .replace(/<!--([\s\S]*?)-->/g, '$1')
-            .replace(/<!\[CDATA\[([\s\S]*?)]]>/g, '$1')
-        }
-        if (options.chars) {
-          options.chars(text)
-        }
-        return ''
-      })
-      index += html.length - rest.length
-      html = rest
-      parseEndTag(stackedTag, index - endTagLength, index)
-    }
-
-    if (html === last) {
-      options.chars && options.chars(html)
-      if (process.env.NODE_ENV !== 'production' && !stack.length && options.warn) {
-        options.warn(`Mal-formatted tag at end of template: "${html}"`)
-      }
-      break
-    }
+    ...
   }
 
   // Clean up any remaining tags
@@ -572,115 +510,9 @@ stack = [{
 lastTag = "div"
 ```
 
-我们在`parse`中传入了`start`函数，接着会执行`start`函数：
+我们在`parse`中传入了`start`函数，接着会执行`start`函数，该函数比较长且涉及情况太多，我就不直接粘贴代码了，大家最好对照源码一起看，在每次解析的时候，我会附上本次解析相关代码。
 
-```JavaScript
-    start (tag, attrs, unary) {
-      // 获取命名空间
-      const ns = (currentParent && currentParent.ns) || platformGetTagNamespace(tag)
-
-      if (isIE && ns === 'svg') {
-        attrs = guardIESVGBug(attrs)
-      }
-
-      const element: ASTElement = {
-        type: 1,
-        tag,
-        attrsList: attrs,
-        attrsMap: makeAttrsMap(attrs),
-        parent: currentParent,
-        children: []
-      }
-      if (ns) {
-        element.ns = ns
-      }
-
-      ...
-
-      // apply pre-transforms
-      for (let i = 0; i < preTransforms.length; i++) {
-        preTransforms[i](element, options)
-      }
-
-      // v-pre指令来标识该元素和子元素不用编译
-      if (!inVPre) {
-        processPre(element)
-        if (element.pre) {
-          inVPre = true
-        }
-      }
-      if (platformIsPreTag(element.tag)) {
-        inPre = true
-      }
-      if (inVPre) {
-        processRawAttrs(element)
-      } else {
-        processFor(element)
-        processIf(element)
-        processOnce(element)
-        processKey(element)
-
-        // determine whether this is a plain element after
-        // removing structural attributes
-        element.plain = !element.key && !attrs.length
-
-        processRef(element)
-        processSlot(element)
-        processComponent(element)
-        for (let i = 0; i < transforms.length; i++) {
-          transforms[i](element, options)
-        }
-        processAttrs(element)
-      }
-
-      ...
-
-      // tree management
-      if (!root) {
-        root = element
-        checkRootConstraints(root)
-      } else if (!stack.length) {
-        // allow root elements with v-if, v-else-if and v-else
-        if (root.if && (element.elseif || element.else)) {
-          checkRootConstraints(element)
-          addIfCondition(root, {
-            exp: element.elseif,
-            block: element
-          })
-        } else if (process.env.NODE_ENV !== 'production') {
-          warnOnce(
-            `Component template should contain exactly one root element. ` +
-            `If you are using v-if on multiple elements, ` +
-            `use v-else-if to chain them instead.`
-          )
-        }
-      }
-      if (currentParent && !element.forbidden) {
-        if (element.elseif || element.else) {
-          processIfConditions(element, currentParent)
-        } else if (element.slotScope) { // scoped slot
-          currentParent.plain = false
-          const name = element.slotTarget || '"default"'
-          ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
-        } else {
-          currentParent.children.push(element)
-          element.parent = currentParent
-        }
-      }
-      if (!unary) {
-        currentParent = element
-        stack.push(element)
-      } else {
-        endPre(element)
-      }
-      // apply post-transforms
-      for (let i = 0; i < postTransforms.length; i++) {
-        postTransforms[i](element, options)
-      }
-    }
-```
-
-这部分代码比较长，且比较核心，我们慢慢讲解：
+整体分为以下几步：
 
 1、 定义基本的ast结构
 
@@ -692,16 +524,16 @@ lastTag = "div"
 
 5、 解析`v-bind`、`v-on`以及普通属性
 
-6、 `v-else`等处理
+6、 根节点或`v-else`块等处理
 
 7、 模板元素父子关系的建立
 
-8、对ast后处理(`postTransforms`)
+8、 对ast后处理(`postTransforms`)
 
 第一步定义基本的ast结构：
 
 ```JavaScript
-const element = {
+const element1 = {
     type: 1,
     tag: "div",
     attrsList: [{name: "id", value: "app"}],
@@ -713,11 +545,12 @@ const element = {
 
 第二步对ast的预处理在`weex`中才会有，我们直接跳过。
 
-第三步对不同指令的解析，我们之后再做讲解。
+第三步对不同指令的解析，我们之后再分别讲解。
 
 第四步中只有对`class`和`style`属性操作。
 
-第五步中主要是`processAttrs`函数。
+第五步主要是`processAttrs`函数。
+
 
 ```JavaScript
 function processAttrs (el) {
@@ -758,7 +591,7 @@ export function addAttr (el: ASTElement, name: string, value: string) {
 之后ast结构如下：
 
 ```JavaScript
-const element = {
+const element1 = {
     type: 1,
     tag: "div",
     attrsList: [{name: "id", value: "app"}],
@@ -766,5 +599,272 @@ const element = {
     parent: undefined,
     children: [],
     plain: false,
-    attrs: [{name: "id", value: "'app'"}],
+    attrs: [{name: "id", value: "'app'"}]
   }
+```
+
+第六步`root`还是`undefined`，所以执行`root = element`并验证根节点是否合法。
+
+```JavaScript
+    if (!root) {
+      root = element
+      checkRootConstraints(root)
+    } else if (!stack.length) {
+      ...
+    }
+```
+
+第七步，
+
+```JavaScript
+// currentParent = undefined
+if (currentParent && !element.forbidden) {
+  if (element.elseif || element.else) {
+    processIfConditions(element, currentParent)
+  } else if (element.slotScope) { // scoped slot
+    currentParent.plain = false
+    const name = element.slotTarget || '"default"'
+    ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
+  } else {
+    currentParent.children.push(element)
+    element.parent = currentParent
+  }
+}
+if (!unary) {
+  currentParent = element
+  stack.push(element)
+} else {
+  endPre(element)
+}
+```
+执行完这一步，`currentParent`值为`element1`，且`stack`栈中有了一个元素`element1`。
+
+第八步没有任何操作。
+
+### round two
+
+`start`函数执行完之后，我们再回到`parseHTML`中，接着会再次执行`while`循环。
+
+此时`html`字符串的`<div id="app">`部分已经被截掉，只剩下后半部分。`!isPlainTextElement('div') == true`所以还是会走`if`。
+
+接着继续查找`<`的位置，如下：
+
+```JavaScript
+let textEnd = html.indexOf('<')  // 20
+```
+
+所以会直接跳过下面的`if`块。
+
+```JavaScript
+let text, rest, next
+if (textEnd >= 0) {
+  rest = html.slice(textEnd)
+  while (
+    !endTag.test(rest) &&
+    !startTagOpen.test(rest) &&
+    !comment.test(rest) &&
+    !conditionalComment.test(rest)
+  ) {
+    // < in plain text, be forgiving and treat it as text
+    next = rest.indexOf('<', 1)
+    if (next < 0) break
+    textEnd += next
+    rest = html.slice(textEnd)
+  }
+  text = html.substring(0, textEnd)
+  advance(textEnd)
+}
+```
+
+这里`vue`其实会对文本中的小于号进行处理，实际实验中，文本中的小于号会被转义。这里简单解释一下，如果文本中包含了`<`，`rest`会等于从`<`开始的文本，然后如果`rest`不是结束标签、不是起始标签、不是注释，则说明它在文本中，之后跳过`<`继续向后寻找，以此循环。
+
+`text`用与保存文本，这里是`这里是文本&lt;箭头之后的文本`。
+
+```JavaScript
+if (textEnd < 0) {
+  text = html
+  html = ''
+}
+
+if (options.chars && text) {
+  options.chars(text)
+}
+```
+
+`options.chars`用于解析文本，我们接着回到`parse`函数中。
+
+`chars`函数比较简单，主要分两种情况，一种是文本需要解析，一种是纯文本，我们这里是纯文本，所以整体的ast变为：
+
+```JavaScript
+const element1 = {
+    type: 1,
+    tag: "div",
+    attrsList: [{name: "id", value: "app"}],
+    attrsMap: {id: "app"},
+    parent: undefined,
+    children: [{
+        type: 3,
+        text: '这里是文本&lt;箭头之后的文本'
+      }],
+    plain: false,
+    attrs: [{name: "id", value: "'app'"}]
+  }
+```
+
+再回到`parseHTML`函数，这时`html`又被截去了上面的文本，所以和`last`不相等，再次执行循环。
+
+### round three
+
+这一次的循环与第一次很类似，因为是`a`标签的起始部分，所以同样会走到：
+
+```JavaScript
+const startTagMatch = parseStartTag()
+if (startTagMatch) {
+  handleStartTag(startTagMatch)
+  continue
+}
+```
+
+`parseStartTag`的解析过程上面已经说过，这里返回的值为：
+
+```JavaScript
+startTagMatch =  {
+  tagName: "a",
+  attrs: [[" :href="url"", ":href", "=", "url", undefined, undefined, index: 0, input: " :href="url" target="_blank">{{title}}</a>↵ <img :src="img">↵</div>"], [" target="_blank"", "target", "=", "_blank", undefined, undefined, index: 0, input: " target="_blank">{{title}}</a>↵  <img :src="img">↵</div>"]],
+  start: 34,
+  end: 65,
+  unarySlash: ""
+}
+```
+
+接着也同样交给`handleStartTag`函数处理，具体过程也不再赘述，这其中，`stack`和`lastTag`的值改变了。
+
+```JavaScript
+stack = [{
+  attrs: [{name: "id", value: "app"}]
+  lowerCasedTag: "div",
+  tag: "div"
+},{
+  attrs: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}]
+  lowerCasedTag: "a",
+  tag: "a"
+}]
+lastTag = "a"
+```
+
+`start`函数也会再次执行，同样按照刚才的步骤来：
+
+第一步定义基本的ast结构：
+
+```JavaScript
+const element2 = {
+    type: 1,
+    tag: 'a',
+    attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+    attrsMap: {':href': 'url', 'target': '_blank'},
+    parent: element1,
+    children: []
+  };
+```
+
+第二步到第四步这里同样没有操作。
+
+第五步`processAttrs`函数中多了绑定属性的判断。
+
+```JavaScript
+function processAttrs (el) {
+  const list = el.attrsList
+  let i, l, name, rawName, value, modifiers, isProp
+  for (i = 0, l = list.length; i < l; i++) {
+    name = rawName = list[i].name
+    value = list[i].value
+    // dirRE.test(':href') = true
+    if (dirRE.test(name)) {
+      el.hasBindings = true
+      // 解析修饰符
+      modifiers = parseModifiers(name)
+      if (modifiers) {
+        name = name.replace(modifierRE, '')
+      }
+      if (bindRE.test(name)) { // v-bind
+        name = name.replace(bindRE, '')
+        value = parseFilters(value)  // filter的解析，这里也没有
+        ...
+        if (isProp || platformMustUseProp(el.tag, el.attrsMap.type, name)) {
+          addProp(el, name, value)
+        } else {
+          addAttr(el, name, value)
+        }
+      } else if (onRE.test(name)) { // v-on
+        ...
+      } else { // normal directives
+        ...
+      }
+    } else {
+      ...
+    }
+  }
+}
+```
+
+之后ast结构如下：
+
+```JavaScript
+const element2 = {
+  type: 1,
+  tag: 'a',
+  attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+  attrsMap: {':href': 'url', 'target': '_blank'},
+  attrs: [{name: "href", value: "url"}, {name: "target", value: "'_blank'"}],
+  parent: 外层div的ast,
+  children: [],
+  hasBindings: true,
+  plain: false
+};
+```
+
+第六步都不符合，直接跳过。
+
+第七步，
+
+```JavaScript
+if (currentParent && !element.forbidden) {
+  if (element.elseif || element.else) {
+    ...
+  } else if (element.slotScope) { // scoped slot
+    ...
+  } else {
+    currentParent.children.push(element)
+    element.parent = currentParent
+  }
+}
+if (!unary) {
+  currentParent = element
+  stack.push(element)
+} else {
+  endPre(element)
+}
+```
+执行完这一步，`currentParent`、`stack`以及整个模板的ast如下：
+
+```JavaScript
+  currentParent = element2
+  stack = [element1, element2]
+  element1 = {
+    type: 1,
+    tag: "div",
+    attrsList: [{name: "id", value: "app"}],
+    attrsMap: {id: "app"},
+    parent: undefined,
+    children: [{
+        type: 3,
+        text: '这里是文本&lt;箭头之后的文本'
+      },
+      element2
+    ],
+    plain: false,
+    attrs: [{name: "id", value: "'app'"}]
+  }
+```
+
+第八步还是没有任何操作。
