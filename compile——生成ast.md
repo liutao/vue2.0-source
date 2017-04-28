@@ -697,3 +697,74 @@ lastTag = "div"
 7、 模板元素父子关系的建立
 
 8、对ast后处理(`postTransforms`)
+
+第一步定义基本的ast结构：
+
+```JavaScript
+const element = {
+    type: 1,
+    tag: "div",
+    attrsList: [{name: "id", value: "app"}],
+    attrsMap: {id: "app"},
+    parent: undefined,
+    children: []
+  }
+```
+
+第二步对ast的预处理在`weex`中才会有，我们直接跳过。
+
+第三步对不同指令的解析，我们之后再做讲解。
+
+第四步中只有对`class`和`style`属性操作。
+
+第五步中主要是`processAttrs`函数。
+
+```JavaScript
+function processAttrs (el) {
+  const list = el.attrsList
+  let i, l, name, rawName, value, modifiers, isProp
+  for (i = 0, l = list.length; i < l; i++) {
+    name = rawName = list[i].name
+    value = list[i].value
+    // dirRE.test('id') = false
+    if (dirRE.test(name)) {
+      ...
+    } else {
+      if (process.env.NODE_ENV !== 'production') {
+        const expression = parseText(value, delimiters)
+        if (expression) {
+          warn(
+            `${name}="${value}": ` +
+            'Interpolation inside attributes has been removed. ' +
+            'Use v-bind or the colon shorthand instead. For example, ' +
+            'instead of <div id="{{ val }}">, use <div :id="val">.'
+          )
+        }
+      }
+      addAttr(el, name, JSON.stringify(value))
+    }
+  }
+}
+```
+
+`parseText`函数主要用于解析文本，因为不是`Vue`指令才会走到`else`中，这里主要是用于提示用户，不要用`id="{{ val }}"`这种方式，函数的具体实现，之后解析文本的时候再说。
+
+```JavaScript
+export function addAttr (el: ASTElement, name: string, value: string) {
+  (el.attrs || (el.attrs = [])).push({ name, value })
+}
+```
+
+之后ast结构如下：
+
+```JavaScript
+const element = {
+    type: 1,
+    tag: "div",
+    attrsList: [{name: "id", value: "app"}],
+    attrsMap: {id: "app"},
+    parent: undefined,
+    children: [],
+    plain: false,
+    attrs: [{name: "id", value: "'app'"}],
+  }
