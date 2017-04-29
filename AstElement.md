@@ -7,8 +7,8 @@ declare type ASTElement = {
   parent: ASTElement | void; // 父元素的AST
   children: Array<ASTNode>; // 子元素的AST数组
 
-  static?: boolean;
-  staticRoot?: boolean;
+  static?: boolean;  // 静态元素
+  staticRoot?: boolean; // 静态根元素
   staticInFor?: boolean;
   staticProcessed?: boolean;
   hasBindings?: boolean; // 元素需要动态编译
@@ -16,7 +16,7 @@ declare type ASTElement = {
   text?: string;
   attrs?: Array<{ name: string; value: string }>;  // 属性数组，name是属性名，value是属性值
   props?: Array<{ name: string; value: string }>;  // prop
-  plain?: boolean; // 
+  plain?: boolean; // 没有属性
   pre?: true;  // 标签上有v-pre指令，标识该元素和子元素不用编译
   ns?: string;  // 标签的命名空间
 
