@@ -2,8 +2,6 @@
 
 这一部分会涉及到许许多多的正则匹配，知道每个正则有什么用途，会更加方便之后的分析。
 
-我们打开`src/compiler/parser/html-parser.js`文件来看它的实现。
-
 ## 正则表达式
 
 ### `src/compiler/parser/index.js`
@@ -470,7 +468,7 @@ match = {
     const attrs = new Array(l)
     for (let i = 0; i < l; i++) {
       const args = match.attrs[i]
-      // hackish work around FF bug https://bugzilla.mozilla.org/show_bug.cgi?id=369778
+      // 上面讲正则的时候，提到过3、4、5分别为双引号、单引号、没有引号的捕获结果。
       if (IS_REGEX_CAPTURING_BROKEN && args[0].indexOf('""') === -1) {
         if (args[3] === '') { delete args[3] }
         if (args[4] === '') { delete args[4] }
