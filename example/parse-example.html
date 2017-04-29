@@ -6,14 +6,19 @@
 	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
 </head>
 <body>
-<div id="app">
+<!-- <div id="app">
 	这里是文本<箭头之后的文本
-	<a :href="url" target="_blank" >{{title}}</a>
+	<a :href="url" target="_blank" >前面的文本{{title}}后面的文本</a>
 	<img :src="img" />
-</div>
+</div> -->
 <script type="text/javascript">
 	var vm = new Vue({
 		el: '#app',
+		template: '<div id="app">\
+			这里是文本<箭头之后的文本\
+			<a :href="url" target="_blank" >前面的文本{{title}}后面的文本</a>\
+			<img :src="img" />\
+		</div>',
 		data: {
 			url: 'https://www.imliutao.com',
 			title: '刘涛的个人小站',

@@ -190,21 +190,20 @@ validDivisionCharRE = /[\w).+\-_$\]]/
 
 例子如下：
 
-```HTML
-<div id="app">
-	这里是文本<箭头之后的文本
-	<a :href="url" target="_blank" >{{title}}</a>
-	<img :src="img" />
-</div>
-<script type="text/javascript">
-	var vm = new Vue({
-		el: '#app',
-		data: {
-			url: 'https://www.imliutao.com',
-			title: '刘涛的个人小站',
-			img: 'https://pic1.zhimg.com/092406f3919e915fffc7ef2f2410e560_is.jpg'
-		}
-	})
+```JavaScript
+var vm = new Vue({
+    el: '#app',
+    template: '<div id="app">\
+      这里是文本<箭头之后的文本\
+      <a :href="url" target="_blank" >前面的文本{{title}}后面的文本</a>\
+      <img :src="img" />\
+    </div>',
+    data: {
+      url: 'https://www.imliutao.com',
+      title: '刘涛的个人小站',
+      img: 'https://pic1.zhimg.com/092406f3919e915fffc7ef2f2410e560_is.jpg'
+    }
+  })
 </script>
 ```
 
@@ -417,7 +416,7 @@ if (startTagMatch) {
 `html.match(startTagOpen)`返回内容如下：
 
 ```JavaScript
-["<div", "div", index: 0, input: "<div id="app">↵	这里是文本&lt;箭头之后的文本↵	<a :href="url" t…t="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]
+["<div", "div", index: 0, input: "<div id="app">↵	这里是文本<箭头之后的文本↵	<a :href="url" t…t="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]
 ```
 此时`start`是一个数组，`match`就是：
 
@@ -435,14 +434,14 @@ match = {
 `end`匹配结果如下：
 
 ```JavaScript
-[">", "", index: 0, input: ">↵	这里是文本&lt;箭头之后的文本↵	<a :href="url" target="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]
+[">", "", index: 0, input: ">↵	这里是文本<箭头之后的文本↵	<a :href="url" target="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]
 ```
 所以最终`match`如下：
 
 ```JavaScript
 match = {
 	tagName: "div",
-	attrs: [[" id="app"", "id", "=", "app", undefined, undefined, index: 0, input: " id="app">↵	这里是文本&lt;箭头之后的文本↵	<a :href="url" target="_blank">{{title}}</a>↵	<img :src="img">↵</div>"]],
+	attrs: [[" id="app"", "id", "=", "app", undefined, undefined, index: 0, input: " id="app"> 	这里是文本<箭头之后的文本 	<a :href="url" target="_blank">{{title}}</a>	<img :src="img"> </div>"]],
 	start: 0,
 	end: 14,
 	unarySlash: ""
@@ -676,9 +675,9 @@ if (textEnd >= 0) {
 }
 ```
 
-这里`vue`其实会对文本中的小于号进行处理，实际实验中，文本中的小于号会被转义。这里简单解释一下，如果文本中包含了`<`，`rest`会等于从`<`开始的文本，然后如果`rest`不是结束标签、不是起始标签、不是注释，则说明它在文本中，之后跳过`<`继续向后寻找，以此循环。
+这里`vue`其实会对文本中的小于号进行处理，如果文本中包含了`<`，`rest`会等于从`<`开始的文本，然后如果`rest`不是结束标签、不是起始标签、不是注释，则说明它在文本中，之后跳过`<`继续向后寻找，以此循环。
 
-`text`用与保存文本，这里是`这里是文本&lt;箭头之后的文本`。
+`text`用与保存文本，这里是`这里是文本<箭头之后的文本`。
 
 ```JavaScript
 if (textEnd < 0) {
@@ -704,7 +703,7 @@ const element1 = {
     parent: undefined,
     children: [{
         type: 3,
-        text: '这里是文本&lt;箭头之后的文本'
+        text: '这里是文本<箭头之后的文本'
       }],
     plain: false,
     attrs: [{name: "id", value: "'app'"}]
@@ -858,7 +857,7 @@ if (!unary) {
     parent: undefined,
     children: [{
         type: 3,
-        text: '这里是文本&lt;箭头之后的文本'
+        text: '这里是文本<箭头之后的文本'
       },
       element2
     ],
@@ -868,3 +867,433 @@ if (!unary) {
 ```
 
 第八步还是没有任何操作。
+
+### round four
+
+这一次循环和第二次循环类似，都是解析文本，然后传入`options.chars`函数。与第二次不同的是，这次解析出来的文本是`前面的文本{{title}}后面的文本`，它绑定了数据`title`。
+
+在`chars`函数中，会走到如下流程：
+
+```JavaScript
+if (!inVPre && text !== ' ' && (expression = parseText(text, delimiters))) {
+  children.push({
+    type: 2,
+    expression,
+    text
+  })
+}
+```
+
+我们来看看`parseText`函数：
+
+```JavaScript
+export function parseText (
+  text: string,
+  delimiters?: [string, string]
+): string | void {
+  const tagRE = delimiters ? buildRegex(delimiters) : defaultTagRE
+  if (!tagRE.test(text)) {
+    return
+  }
+  const tokens = []
+  let lastIndex = tagRE.lastIndex = 0
+  let match, index
+  // match = match = ["{{title}}", "title", index: 5, input: "前面的文本{{title}}后面的文本"]
+  while ((match = tagRE.exec(text))) {
+    index = match.index
+    // push text token
+    if (index > lastIndex) {
+      tokens.push(JSON.stringify(text.slice(lastIndex, index)))
+    }
+    // tag token
+    const exp = parseFilters(match[1].trim())
+    tokens.push(`_s(${exp})`)
+    lastIndex = index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    tokens.push(JSON.stringify(text.slice(lastIndex)))
+  }
+  return tokens.join('+')
+}
+```
+
+整个函数还是比较简单的，首先判断`text`中有没有分隔符，没有就直接返回，这也是第二步中没有走到这个循环的原因。
+
+在`parseText`中的`while`循环把我们的文本分为`"前面的文本"`、`{{title}}`、`"后面的文本"`三部分，并对绑定数据的部分通过`filter`处理，包裹为`_s(${exp})`，`_s`是什么在`vdom`里面我们再做解释，最后返回的值为`"前面的文本"+_s(title)+"后面的文本"`。
+
+到这里，我们整个模板的ast变为如下：
+
+```JavaScript
+element1 = {
+  type: 1,
+  tag: "div",
+  attrsList: [{name: "id", value: "app"}],
+  attrsMap: {id: "app"},
+  parent: undefined,
+  children: [{
+      type: 3,
+      text: '这里是文本<箭头之后的文本'
+    },
+    {
+      type: 1,
+      tag: 'a',
+      attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+      attrsMap: {':href': 'url', 'target': '_blank'},
+      attrs: [{name: "href", value: "url"}, {name: "target", value: "'_blank'"}],
+      parent: element1,
+      children: [{
+        type: 2,
+        expression: '"前面的文本"+_s(title)+"后面的文本"',
+        text: '前面的文本{{title}}后面的文本'
+      }],
+      hasBindings: true,
+      plain: false
+    }
+  ],
+  plain: false,
+  attrs: [{name: "id", value: "'app'"}]
+}
+```
+
+### round five
+
+再一次回到`parseHTML`中的`while`循环，这时我们的`html`还剩下`</a><img :src="img"></div>`。
+
+显然这回会走到`endTagMatch`
+
+```JavaScript
+const endTagMatch = html.match(endTag)
+// ["</a>", "a", index: 0, input: "</a>↵  <img :src="img">↵</div>"]
+if (endTagMatch) {
+  const curIndex = index
+  advance(endTagMatch[0].length)
+  parseEndTag(endTagMatch[1], curIndex, index)
+  continue
+}
+```
+
+我们这一次走进`parseEndTag`来一探究竟：
+
+```JavaScript
+  // tagName = 'a', start = 84, end = 88
+  function parseEndTag (tagName, start, end) {
+    let pos, lowerCasedTagName
+    if (start == null) start = index
+    if (end == null) end = index
+
+    if (tagName) {
+      lowerCasedTagName = tagName.toLowerCase()
+    }
+
+    if (tagName) {
+      // 寻找最近的起始`a`标签
+      for (pos = stack.length - 1; pos >= 0; pos--) {
+        if (stack[pos].lowerCasedTag === lowerCasedTagName) {
+          break
+        }
+      }
+    } else {
+      pos = 0
+    }
+
+    if (pos >= 0) {
+      for (let i = stack.length - 1; i >= pos; i--) {
+        if (process.env.NODE_ENV !== 'production' &&
+            (i > pos || !tagName) &&
+            options.warn) {
+          options.warn(
+            `tag <${stack[i].tag}> has no matching end tag.`
+          )
+        }
+        if (options.end) {
+          options.end(stack[i].tag, start, end)
+        }
+      }
+
+      // Remove the open elements from the stack
+      stack.length = pos
+      lastTag = pos && stack[pos - 1].tag
+    } else if (lowerCasedTagName === 'br') {
+      ...
+    } else if (lowerCasedTagName === 'p') {
+      ...
+    }
+  }
+```
+上面的代码，我们会走到`options.end`中，我们返回`parse`中，看一看这个方法干了啥。
+
+```JavaScript
+end () {
+  // remove trailing whitespace
+  const element = stack[stack.length - 1]
+  const lastNode = element.children[element.children.length - 1]
+  if (lastNode && lastNode.type === 3 && lastNode.text === ' ' && !inPre) {
+    element.children.pop()
+  }
+  // pop stack
+  stack.length -= 1
+  currentParent = stack[stack.length - 1]
+  endPre(element)
+}
+```
+
+代码很短，看着就神清气爽，它其实就是一个简单的出栈操作，具体过程如下：
+
+1、取出`stack`中的最后一个元素。
+
+2、取出该元素的最后一个子元素。
+
+3、如果最后一个子元素是纯文本`' '`则删除，这是因为我们的模板一般都会缩进，都会有换行，所以这里是清除换行等添加的内容。
+
+4、`stack`长度减一
+
+5、`currentParent`变为栈中最后一个元素
+
+6、 处理`v-pre`或`pre`的结束标签
+
+这时`stack`和`currentParent`分别变为：
+
+```JavaScript
+stack = [element1]
+currentParent = element
+```
+
+回到`parseEndTag`中，同样也做了一个出栈的操作：
+
+`stack`长度变为`pos`，`lastTag`变为栈中最后一个元素的`tag`，又回到了：
+
+```JavaScript
+stack = [{
+  attrs: [{name: "id", value: "app"}]
+  lowerCasedTag: "div",
+  tag: "div"
+}]
+lastTag = "div"
+```
+
+### round six
+
+这一次因为我们的换行，所以会给`div`添加一个空的纯文本结点，也就是`end`中要去掉的`' '`文本结点，模板ast变为：
+
+```JavaScript
+element1 = {
+  type: 1,
+  tag: "div",
+  attrsList: [{name: "id", value: "app"}],
+  attrsMap: {id: "app"},
+  parent: undefined,
+  children: [{
+      type: 3,
+      text: '这里是文本<箭头之后的文本'
+    },
+    {
+      type: 1,
+      tag: 'a',
+      attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+      attrsMap: {':href': 'url', 'target': '_blank'},
+      attrs: [{name: "href", value: "url"}, {name: "target", value: "'_blank'"}],
+      parent: element1,
+      children: [{
+        type: 2,
+        expression: '"前面的文本"+_s(title)+"后面的文本"',
+        text: '前面的文本{{title}}后面的文本'
+      }],
+      hasBindings: true,
+      plain: false
+    },
+    {
+      text: " ",
+      type: 3
+    }
+  ],
+  plain: false,
+  attrs: [{name: "id", value: "'app'"}]
+}
+```
+
+### round seven
+
+这次我们又会走到`startTagMatch`:
+
+```JavaScript
+const startTagMatch = parseStartTag()
+if (startTagMatch) {
+  handleStartTag(startTagMatch)
+  continue
+}
+```
+
+这一次由于我们的`img`是一个单标签，所以`startTagMatch`如下：
+
+```JavaScript
+startTagMatch =  {
+  tagName: "img",
+  attrs: [[" :src="img"", ":src", "=", "img", undefined, undefined, index: 0, input: " :src="img" />    </div>"]],
+  start: 91,
+  end: 109,
+  unarySlash: "/"
+}
+```
+因为单标签不会包含其他内容，所以不会影响栈的深度。
+
+在`handleStartTag`处理时，单标签会直接执行`start`函数，跳过`stack`和`lastTag`的修改。
+
+在`start`函数中，单标签和双标签的区别也是直接跳过`stack`和`currentParent`，属性的解析都相同，这时整个模板的ast又有所改变了。
+
+```JavaScript
+element1 = {
+  type: 1,
+  tag: "div",
+  attrsList: [{name: "id", value: "app"}],
+  attrsMap: {id: "app"},
+  parent: undefined,
+  children: [{
+      type: 3,
+      text: '这里是文本<箭头之后的文本'
+    },
+    {
+      type: 1,
+      tag: 'a',
+      attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+      attrsMap: {':href': 'url', 'target': '_blank'},
+      attrs: [{name: "href", value: "url"}, {name: "target", value: "'_blank'"}],
+      parent: element1,
+      children: [{
+        type: 2,
+        expression: '"前面的文本"+_s(title)+"后面的文本"',
+        text: '前面的文本{{title}}后面的文本'
+      }],
+      hasBindings: true,
+      plain: false
+    },
+    {
+      text: " ",
+      type: 3
+    },
+    {
+      type: 1,
+      tag: 'img',
+      attrsList: [{name: ":src", value: "img"}],
+      attrsMap: {':src': 'img'},
+      attrs: [{name: "src", value: "url"}],
+      parent: element1,
+      children: [],
+      hasBindings: true,
+      plain: false
+    }
+  ],
+  plain: false,
+  attrs: [{name: "id", value: "'app'"}]
+}
+```
+
+### round eight
+
+这一次与第六次循环一模一样，同样添加了一个空文本子节点，模板ast变为：
+
+```JavaScript
+element1 = {
+  type: 1,
+  tag: "div",
+  attrsList: [{name: "id", value: "app"}],
+  attrsMap: {id: "app"},
+  parent: undefined,
+  children: [{
+      type: 3,
+      text: '这里是文本<箭头之后的文本'
+    },
+    {
+      type: 1,
+      tag: 'a',
+      attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+      attrsMap: {':href': 'url', 'target': '_blank'},
+      attrs: [{name: "href", value: "url"}, {name: "target", value: "'_blank'"}],
+      parent: element1,
+      children: [{
+        type: 2,
+        expression: '"前面的文本"+_s(title)+"后面的文本"',
+        text: '前面的文本{{title}}后面的文本'
+      }],
+      hasBindings: true,
+      plain: false
+    },
+    {
+      text: " ",
+      type: 3
+    },
+    {
+      type: 1,
+      tag: 'img',
+      attrsList: [{name: ":src", value: "img"}],
+      attrsMap: {':src': 'img'},
+      attrs: [{name: "src", value: "url"}],
+      parent: element1,
+      children: [],
+      hasBindings: true,
+      plain: false
+    },
+    {
+      text: " ",
+      type: 3
+    }
+  ],
+  plain: false,
+  attrs: [{name: "id", value: "'app'"}]
+}
+```
+
+### round nine
+
+这一次，找到了我们整个模板的闭合标签，然后执行`end`函数，最终生成的ast就是：
+
+
+```JavaScript
+element1 = {
+  type: 1,
+  tag: "div",
+  attrsList: [{name: "id", value: "app"}],
+  attrsMap: {id: "app"},
+  parent: undefined,
+  children: [{
+      type: 3,
+      text: '这里是文本<箭头之后的文本'
+    },
+    {
+      type: 1,
+      tag: 'a',
+      attrsList: [{name: ":href", value: "url"}, {name: "target", value: "_blank"}],
+      attrsMap: {':href': 'url', 'target': '_blank'},
+      attrs: [{name: "href", value: "url"}, {name: "target", value: "'_blank'"}],
+      parent: element1,
+      children: [{
+        type: 2,
+        expression: '"前面的文本"+_s(title)+"后面的文本"',
+        text: '前面的文本{{title}}后面的文本'
+      }],
+      hasBindings: true,
+      plain: false
+    },
+    {
+      text: " ",
+      type: 3
+    },
+    {
+      type: 1,
+      tag: 'img',
+      attrsList: [{name: ":src", value: "img"}],
+      attrsMap: {':src': 'img'},
+      attrs: [{name: "src", value: "url"}],
+      parent: element1,
+      children: [],
+      hasBindings: true,
+      plain: false
+    }
+  ],
+  plain: false,
+  attrs: [{name: "id", value: "'app'"}]
+}
+```
+
+## 结语
+
+至此，我们通过一个保护绑定属性、包含纯文本、包含文本模板、包含单标签、包含双标签的实例，一步一步详细的分析了把`html`字符串解析为`ast`的过程。之后对于各种复杂的指令等，我们单独讲解。
