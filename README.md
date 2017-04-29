@@ -15,6 +15,8 @@ vue 2.2.6源码分析
 
 [compile概述](compile概述.md)
 
+[compile——生成ast](compile——生成ast.md)
+
 以下是整理一些比较零散的数据：
 
 [Vue的静态方法和属性](https://github.com/liutaofe/vue2.0-source/issues/3)
