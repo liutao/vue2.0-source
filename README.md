@@ -17,8 +17,12 @@ vue 2.2.6源码分析
 
 [compile——生成ast](compile——生成ast.md)
 
-以下是整理一些比较零散的数据：
+[compile——优化静态内容](compile——优化静态内容.md)
 
-[Vue的静态方法和属性](https://github.com/liutaofe/vue2.0-source/issues/3)
+[compile——生成render字符串](compile——生成render字符串.md)
 
-[Vue的实例方法和属性](https://github.com/liutaofe/vue2.0-source/issues/5)
+以下是整理一些比较零散的数据，主要是记录结构中每个数据表示什么意思，会不断完善更新：
+
+[Vue全局属性](Vue-globals.md)
+
+[AstElement](AstElement.md)
