@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	<a :href="url">{{message}}</a>
+	<p>静态根节点<span>静态内容</span></p>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			message: '博客地址',
+			url: 'https://www.imliutao.com'
+		}
+	})
+</script>
+</body>
+</html>
