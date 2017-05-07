@@ -7,17 +7,20 @@
 </head>
 <body>
 <div id="app">
-	这里是文本<箭头之后的文本
-	<p>{{message}}</p>
-	<p>静态文本<a href="https://www.imliutao.com" :time="message">博客地址</a></p>
+
 </div>
 <script type="text/javascript">
-	var vm = new Vue({
-		el: '#app',
-		data: {
-			message: '动态文本'
-		}
-	})
+
+var child = {
+	 template: '<p>child</p>'
+};
+new Vue({
+	 template: '<p>parent <child></child></p>',
+	 components:{
+	 	child: child
+	 }
+}).$mount('#app');
+
 </script>
 </body>
 </html>

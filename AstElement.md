@@ -50,8 +50,8 @@ declare type ASTElement = {
   classBinding?: string;
   staticStyle?: string;
   styleBinding?: string;
-  events?: ASTElementHandlers;
-  nativeEvents?: ASTElementHandlers;
+  events?: ASTElementHandlers;  // 没有.native来修饰添加的事件
+  nativeEvents?: ASTElementHandlers; // 通过.native来修饰添加的原生事件
 
   transition?: string | true;
   transitionOnAppear?: boolean;

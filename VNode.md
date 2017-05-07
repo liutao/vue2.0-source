@@ -9,8 +9,8 @@ VNode: {
 	context: Component | void; // VNode所处Vue对象
 	functionalContext: Component | void; // only for functional component root nodes
 	key: string | number | void; 
-	componentOptions: VNodeComponentOptions | void;
-	componentInstance: Component | void; // component instance
+	componentOptions: VNodeComponentOptions | void; // VNode对象如果对应的是一个自定义组件，componentOptions保存组件相关事件、props数据等
+	componentInstance: Component | void; // VNode对象如果对应的是一个自定义组件，componentInstance保存相对应的vue实例
 	parent: VNode | void; // component placeholder node
 	raw: boolean; // contains raw HTML? (server only)
 	isStatic: boolean; // hoisted static node
