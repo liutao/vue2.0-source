@@ -40,8 +40,8 @@ declare type ASTElement = {
   // v-for="(item, index) in items"
   // v-for="(value, key, index) in object"
   for?: string; // 要遍历的数据items
-  forProcessed?: boolean;
-  key?: string;
+  forProcessed?: boolean; // 标识在for循环过程中
+  key?: string; // 虚拟dom做diff时候的key，这里如果v-for在自定义元素上，则必须有key
   alias?: string; // 遍历数组时的元素item或遍历对象时的值value
   iterator1?: string; // 遍历数组的索引index或遍历对象时的键key
   iterator2?: string; // 遍历对象时的索引index
