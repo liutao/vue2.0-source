@@ -32,10 +32,10 @@ declare type ASTElement = {
   refInFor?: boolean; // 是否包含在for循环内
 
   if?: string; // v-if的表达式
-  ifProcessed?: boolean;
+  ifProcessed?: boolean; // 标识在处理v-if中
   elseif?: string;  // v-else-if的表达式
-  else?: true;
-  ifConditions?: ASTIfConditions;  // 与if表达式一致的标签AST数组
+  else?: true; // v-else时为true
+  ifConditions?: ASTIfConditions;  // 与v-if相关的一组元素
 
   // v-for="(item, index) in items"
   // v-for="(value, key, index) in object"
