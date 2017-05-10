@@ -21,7 +21,7 @@ vue 2.2.6源码分析
 
 [compile——生成render字符串](compile——生成render字符串.md)
 
-[compile——v-for](compile——v-for.md)
+[compile——v-for](complie——v-for.md)
 
 [compile——v-if](compile——v-if.md)
 
