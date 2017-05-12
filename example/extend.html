@@ -9,17 +9,33 @@
 <div id="app">
 
 </div>
+<div id="mount-point"></div>
+
 <script type="text/javascript">
 
-var child = {
-	 template: '<p>child</p>'
-};
-new Vue({
-	 template: '<p>parent <child></child></p>',
-	 components:{
-	 	child: child
-	 }
-}).$mount('#app');
+// var child = {
+// 	 template: '<p>child</p>'
+// };
+// new Vue({
+// 	 template: '<p>parent <child></child></p>',
+// 	 components:{
+// 	 	child: child
+// 	 }
+// }).$mount('#app');
+var Profile = Vue.extend({
+  name: 'profile',
+  template: '<p>{{firstName}} {{lastName}} aka {{alias}}</p>',
+  data: function () {
+    return {
+      firstName: 'Walter',
+      lastName: 'White',
+      alias: 'Heisenberg'
+    }
+  }
+})
+var Profile2 = Vue.extend(Profile.extendOptions)
+
+new Profile2().$mount('#mount-point')
 
 </script>
 </body>
