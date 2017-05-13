@@ -22,21 +22,32 @@
 // 	 	child: child
 // 	 }
 // }).$mount('#app');
-var Profile = Vue.extend({
-  name: 'profile',
-  template: '<p>{{firstName}} {{lastName}} aka {{alias}}</p>',
-  data: function () {
+
+
+// var Profile = Vue.extend({
+//   template: '<p>{{firstName}} {{lastName}} aka {{alias}}</p>',
+//   data: function () {
+//     return {
+//       firstName: 'Walter',
+//       lastName: 'White',
+//       alias: 'Heisenberg'
+//     }
+//   }
+// })
+// new Profile().$mount('#mount-point')
+
+
+  var Profile = Vue.extend({
+    template: '<p>{{firstName}} {{lastName}} aka {{alias}}</p>',
+  });
+  Vue.mixin({ data: function () {
     return {
       firstName: 'Walter',
       lastName: 'White',
       alias: 'Heisenberg'
     }
-  }
-})
-var Profile2 = Vue.extend(Profile.extendOptions)
-
-new Profile2().$mount('#mount-point')
-
+  }});
+  new Profile().$mount('#mount-point');
 </script>
 </body>
 </html>
