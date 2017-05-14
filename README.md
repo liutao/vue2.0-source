@@ -27,6 +27,8 @@ vue 2.2.6源码分析
 
 [vdom概述](vdom概述.md)
 
+[Vue.extend](Vue.extend.md)
+
 以下是整理一些比较零散的数据，主要是记录结构中每个数据表示什么意思，会不断完善更新：
 
 [Vue全局属性](Vue-globals.md)
