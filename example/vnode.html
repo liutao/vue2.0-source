@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	<my-component></my-component>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		components: {
+			myComponent: {
+				render: function(h){
+					// return h('div', "test");
+					return h('div', 213);
+					
+				}
+			}
+		}
+	});
+</script>
+</body>
+</html>
