@@ -166,6 +166,140 @@ export function _createElement (
 
 之后就是对子元素进行归一化，在[children的归一化处理](children的归一化处理.md)中我们已经讲解了它的处理逻辑。
 
+后面就是创建`VNode`对象的主要内容了：
 
+1、如果`tag`是字符串，且是平台保留标签名。则直接创建`VNode`对象。
 
+2、否则如果`tag`是字符串，则执行`resolveAsset(context.$options, 'components', tag)`。
+
+看一眼`resolveAsset`的实现：
+
+```JavaScript
+export function resolveAsset (
+  options: Object,
+  type: string,
+  id: string,
+  warnMissing?: boolean
+): any {
+  ...
+  const assets = options[type]
+  
+  if (hasOwn(assets, id)) return assets[id]
+  const camelizedId = camelize(id)
+  if (hasOwn(assets, camelizedId)) return assets[camelizedId]
+  const PascalCaseId = capitalize(camelizedId)
+  if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId]
+  
+  const res = assets[id] || assets[camelizedId] || assets[PascalCaseId]
+  ...
+  return res
+}
+```
+
+其实这里处理的是我们自定义的组件，例如：
+
+```JavaScript
+<div id="app">
+  <my-component></my-component>
+</div>
+<script type="text/javascript">
+  var vm = new Vue({
+    el: '#app',
+    components: {
+      'my-component': {
+        render: function(h){
+          return h('div', "test");
+        }
+      }
+    }
+  });
+</script>
+```
+
+当前解析的正是我们自定义的`my-component`，`resolveAsset`方法其实就是获取`context.$options.components`中`my-component`所对应的值，从上面的代码我们也可以看出，这里的'my-component'可以是`myComponent`，也可以是`MyComponent`，我们的`Vue`都可以正常解析。
+
+如果返回的`res`即`Ctor`不为空，则执行`vnode = createComponent(Ctor, data, context, children, tag)`。
+
+`createComponent`我们后续讲解。
+
+3、如果`tag`是字符串，但既不是平台保留标签名，也不是`components`中的自定义标签，则执行`vnode = new VNode(tag, data, children, undefined, undefined, context)`创建`VNode`对象。
+
+4、如果`tag`不是字符串，则执行`vnode = createComponent(tag, data, context, children)`创建对象。
+
+之后有对命名空间的一些处理，比较简单，大家自己看一眼就好，接下来我们就说一说这个`createComponent`。
+
+## `createComponent`
+
+代码如下：
+
+```JavaScript
+export function createComponent (
+  Ctor: Class<Component> | Function | Object | void,
+  data?: VNodeData,
+  context: Component,
+  children: ?Array<VNode>,
+  tag?: string
+): VNode | void {
+  if (!Ctor) {
+    return
+  }
+
+  const baseCtor = context.$options._base
+  if (isObject(Ctor)) {
+    Ctor = baseCtor.extend(Ctor)
+  }
+
+  if (typeof Ctor !== 'function') {
+    if (process.env.NODE_ENV !== 'production') {
+      warn(`Invalid Component definition: ${String(Ctor)}`, context)
+    }
+    return
+  }
+
+  ...
+  resolveConstructorOptions(Ctor)
+
+  data = data || {}
+
+  // transform component v-model data into props & events
+  if (data.model) {
+    transformModel(Ctor.options, data)
+  }
+
+  // extract props
+  const propsData = extractProps(data, Ctor, tag)
+
+  // 函数化组件 https://cn.vuejs.org/v2/guide/render-function.html#函数化组件
+  // functional component
+  if (Ctor.options.functional) {
+    return createFunctionalComponent(Ctor, propsData, data, context, children)
+  }
+
+  // extract listeners, since these needs to be treated as
+  // child component listeners instead of DOM listeners
+  const listeners = data.on
+  // replace with listeners with .native modifier
+  data.on = data.nativeOn
+
+  if (Ctor.options.abstract) {
+    // abstract components do not keep anything
+    // other than props & listeners
+    data = {}
+  }
+
+  // merge component management hooks onto the placeholder node
+  mergeHooks(data)
+
+  // return a placeholder vnode
+  const name = Ctor.options.name || tag
+  const vnode = new VNode(
+    `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
+    data, undefined, undefined, undefined, context,
+    { Ctor, propsData, listeners, tag, children }
+  )
+  return vnode
+}
+```
+
+未完待续
 
