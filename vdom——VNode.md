@@ -230,6 +230,8 @@ export function resolveAsset (
 
 ## `createComponent`
 
+从函数名我们就知道，该方法是创建一个组件，也就是我们自己定义的组件。
+
 代码如下：
 
 ```JavaScript
@@ -240,6 +242,7 @@ export function createComponent (
   children: ?Array<VNode>,
   tag?: string
 ): VNode | void {
+  // Ctor为空表示从context的components属性上没找到tag对应的属性
   if (!Ctor) {
     return
   }
@@ -247,13 +250,6 @@ export function createComponent (
   const baseCtor = context.$options._base
   if (isObject(Ctor)) {
     Ctor = baseCtor.extend(Ctor)
-  }
-
-  if (typeof Ctor !== 'function') {
-    if (process.env.NODE_ENV !== 'production') {
-      warn(`Invalid Component definition: ${String(Ctor)}`, context)
-    }
-    return
   }
 
   ...
@@ -301,5 +297,31 @@ export function createComponent (
 }
 ```
 
-未完待续
+上面的`baseCtor`其实就是我们的`Vue`对象。
+
+如果`Ctor`是对象，则执行`baseCtor.extend(Ctor)`，这里对应的是我们上面提到的第2种情况，这也就是我为什么之前先讲了`Vue.extend`的实现。
+
+如果`Ctor`不是对象，则跳过这一步骤。因为我们`vm.$createElement`方法第一个参数可能是一个`Vue`的子对象，此时`tag`就不是字符串，对应上面提到的第4中情况，例子如下：
+
+```JavaScript
+<div id="app">
+</div>
+<script type="text/javascript">
+  new Vue({
+    render: function(h){
+      return h(Vue.extend({
+        template: '<div>test</div>'
+      }))
+    }
+  }).$mount('#app');
+</script>
+```
+经过这一步的处理，第2、4种情况就统一了。
+
+接着是异步组件相关内容，后续单独讲解。
+
+`resolveConstructorOptions`方法是递归合并父对象上的`options`属性，具体见[Vue.extend](Vue.extend.md)。
+
+`data.model`是对元素上`v-model`指令的处理，后续单独讲解各个指令。
+
 
