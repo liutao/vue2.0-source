@@ -301,7 +301,7 @@ export function createComponent (
 
 如果`Ctor`是对象，则执行`baseCtor.extend(Ctor)`，这里对应的是我们上面提到的第2种情况，这也就是我为什么之前先讲了`Vue.extend`的实现。
 
-如果`Ctor`不是对象，则跳过这一步骤。因为我们`vm.$createElement`方法第一个参数可能是一个`Vue`的子对象，此时`tag`就不是字符串，对应上面提到的第4中情况，例子如下：
+如果`Ctor`不是对象，则跳过这一步骤。因为我们`createElement`方法第一个参数可能是一个`Vue`的子对象，此时`tag`就不是字符串，对应上面提到的第4中情况，例子如下：
 
 ```JavaScript
 <div id="app">
@@ -324,4 +324,147 @@ export function createComponent (
 
 `data.model`是对元素上`v-model`指令的处理，后续单独讲解各个指令。
 
+`extractProps`从函数名称上，我们也可以知道它是抽取`props`的数据。
 
+```JavaScript
+function extractProps (data: VNodeData, Ctor: Class<Component>, tag?: string): ?Object {
+  const propOptions = Ctor.options.props
+  if (!propOptions) {
+    return
+  }
+  const res = {}
+  const { attrs, props, domProps } = data
+  if (attrs || props || domProps) {
+    for (const key in propOptions) {
+      const altKey = hyphenate(key)
+      // 提示dom中的属性应该用kebab-case格式的值
+      ...
+
+      checkProp(res, props, key, altKey, true) ||
+      checkProp(res, attrs, key, altKey) ||
+      checkProp(res, domProps, key, altKey)
+    }
+  }
+  return res
+}
+
+function checkProp (
+  res: Object,
+  hash: ?Object,
+  key: string,
+  altKey: string,
+  preserve?: boolean
+): boolean {
+  if (hash) {
+    if (hasOwn(hash, key)) {
+      res[key] = hash[key]
+      if (!preserve) {
+        delete hash[key]
+      }
+      return true
+    } else if (hasOwn(hash, altKey)) {
+      res[key] = hash[altKey]
+      if (!preserve) {
+        delete hash[altKey]
+      }
+      return true
+    }
+  }
+  return false
+}
+```
+
+我们在子组件中获取父组件的方法和数据时，是通过`props`来传递的。使用的时候，我们需要在子组件中定义`props`属性，来指定使用父组件传递的哪些数据，以及每个属性的类型是什么。上面代码中`Ctor.options.props`就是在子组件中指定的`props`，如果没有指定，则直接返回。
+
+`data`中的`attrs`是绑定在子元素上的属性值，因为父级组件传递数据到子组件是通过把数据绑定在子元素的属性上，所以我们传递的数据在`attrs`中；`props`暂时没有找到添加的地方；`domProps`是必须通过`props`来绑定的属性，比如`input`的`value`、`option`的`selected`属性等。
+
+遍历`propsOptions`中的属性，所以`props`中没有指定的属性，即使在父组件中绑定了，子组件也找不到。`altKey`是驼峰命名属性的中划线连接式，例如`myName`转换为`my-name`。
+
+`checkProp`方法是从`hash`中找`key`或`altKey`属性，如果有就返回`true`，没找到则返回`false`。没有传递`preserve`参数，则表示找到该`key`的值时删除`hash`上对应的属性。`extractProps`获取值的优先级从高到低分别是`props`、`attrs`、`domProps`，从之前`parse`方法中我们知道，模板解析的结果中`domProps`和`attrs`是不会重复的。
+
+函数化组件之后单独讲。
+
+`data.on`上保存的是我们绑定在元素上的事件，且该事件没有加`native`修饰符。`data.nativeOn`保存的是添加了`native`修饰符的事件。关于事件的细节也比较多，我们之后再细说。这里我们把`data.on`赋值给`listeners`，`data.on`保存的是`data.nativeOn`的值。
+
+`Ctor.options.abstract`是`KeepLive`等抽象组件，`data`上只能包含`props & listeners`。
+
+`mergeHooks`是给`data`对象上添加一些钩子函数。
+
+```JavaScript
+const hooksToMerge = Object.keys(componentVNodeHooks)
+function mergeHooks (data: VNodeData) {
+  if (!data.hook) {
+    data.hook = {}
+  }
+  for (let i = 0; i < hooksToMerge.length; i++) {
+    const key = hooksToMerge[i]
+    const fromParent = data.hook[key]
+    const ours = componentVNodeHooks[key]
+    data.hook[key] = fromParent ? mergeHook(ours, fromParent) : ours
+  }
+}
+
+function mergeHook (one: Function, two: Function): Function {
+  return function (a, b, c, d) {
+    one(a, b, c, d)
+    two(a, b, c, d)
+  }
+}
+```
+
+```JavaScript
+const componentVNodeHooks = {
+  init (
+    vnode: VNodeWithData,
+    hydrating: boolean,
+    parentElm: ?Node,
+    refElm: ?Node
+  ): ?boolean {
+    if (!vnode.componentInstance || vnode.componentInstance._isDestroyed) {
+      const child = vnode.componentInstance = createComponentInstanceForVnode(
+        vnode,
+        activeInstance,
+        parentElm,
+        refElm
+      )
+      child.$mount(hydrating ? vnode.elm : undefined, hydrating)
+    } else if (vnode.data.keepAlive) {
+      // kept-alive components, treat as a patch
+      const mountedNode: any = vnode // work around flow
+      componentVNodeHooks.prepatch(mountedNode, mountedNode)
+    }
+  },
+
+  prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
+    const options = vnode.componentOptions
+    const child = vnode.componentInstance = oldVnode.componentInstance
+    updateChildComponent(
+      child,
+      options.propsData, // updated props
+      options.listeners, // updated listeners
+      vnode, // new parent vnode
+      options.children // new children
+    )
+  },
+
+  insert (vnode: MountedComponentVNode) {
+    if (!vnode.componentInstance._isMounted) {
+      vnode.componentInstance._isMounted = true
+      callHook(vnode.componentInstance, 'mounted')
+    }
+    if (vnode.data.keepAlive) {
+      activateChildComponent(vnode.componentInstance, true /* direct */)
+    }
+  },
+
+  destroy (vnode: MountedComponentVNode) {
+    if (!vnode.componentInstance._isDestroyed) {
+      if (!vnode.data.keepAlive) {
+        vnode.componentInstance.$destroy()
+      } else {
+        deactivateChildComponent(vnode.componentInstance, true /* direct */)
+      }
+    }
+  }
+}
+```
