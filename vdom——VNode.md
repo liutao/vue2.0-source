@@ -388,7 +388,7 @@ function checkProp (
 
 `Ctor.options.abstract`是`KeepLive`等抽象组件，`data`上只能包含`props & listeners`。
 
-`mergeHooks`是给`data`对象上添加一些钩子函数。
+`mergeHooks`是合并`data`对象上的一些钩子函数。
 
 ```JavaScript
 const hooksToMerge = Object.keys(componentVNodeHooks)
@@ -411,60 +411,8 @@ function mergeHook (one: Function, two: Function): Function {
   }
 }
 ```
+`hooksToMerge`共有四个值`init`、`prepatch`、`insert`、`destroy`。具体实现后面讲解，从函数名上我们也可以猜到，它们分别是正在`VNode`对象初始化、`patch`之前、插入到dom中、`VNode`对象销毁时调用。
 
-```JavaScript
-const componentVNodeHooks = {
-  init (
-    vnode: VNodeWithData,
-    hydrating: boolean,
-    parentElm: ?Node,
-    refElm: ?Node
-  ): ?boolean {
-    if (!vnode.componentInstance || vnode.componentInstance._isDestroyed) {
-      const child = vnode.componentInstance = createComponentInstanceForVnode(
-        vnode,
-        activeInstance,
-        parentElm,
-        refElm
-      )
-      child.$mount(hydrating ? vnode.elm : undefined, hydrating)
-    } else if (vnode.data.keepAlive) {
-      // kept-alive components, treat as a patch
-      const mountedNode: any = vnode // work around flow
-      componentVNodeHooks.prepatch(mountedNode, mountedNode)
-    }
-  },
+`mergeHooks`合并钩子函数的流程很简单，如果`data.hook`上已经有了同名的钩子函数，则创建一个新的函数，其内部分别调用这两个同名函数，否则直接添加到`data.hook`对象上。
 
-  prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
-    const options = vnode.componentOptions
-    const child = vnode.componentInstance = oldVnode.componentInstance
-    updateChildComponent(
-      child,
-      options.propsData, // updated props
-      options.listeners, // updated listeners
-      vnode, // new parent vnode
-      options.children // new children
-    )
-  },
-
-  insert (vnode: MountedComponentVNode) {
-    if (!vnode.componentInstance._isMounted) {
-      vnode.componentInstance._isMounted = true
-      callHook(vnode.componentInstance, 'mounted')
-    }
-    if (vnode.data.keepAlive) {
-      activateChildComponent(vnode.componentInstance, true /* direct */)
-    }
-  },
-
-  destroy (vnode: MountedComponentVNode) {
-    if (!vnode.componentInstance._isDestroyed) {
-      if (!vnode.data.keepAlive) {
-        vnode.componentInstance.$destroy()
-      } else {
-        deactivateChildComponent(vnode.componentInstance, true /* direct */)
-      }
-    }
-  }
-}
-```
+最后会创建一个`vnode`对象，并返回。所以，上面提到的第2种和第4种情况，最终会返回一个标签名为`vue-component-cid-name`格式的`VNode`对象。
