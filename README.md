@@ -25,6 +25,9 @@ vue 2.2.6源码分析
 
 [Vue.extend](Vue.extend.md)
 
+[vdom——VNode](vdom——VNode.md)
+
+
 对各个指令的处理
 
 [v-for](v-for.md)
