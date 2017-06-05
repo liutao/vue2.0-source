@@ -10,10 +10,9 @@
 </div>
 <script type="text/javascript">
 	let vue = new Vue({
-		template: '<p v-if="value == 1">v-if块的内容</p>\
-			<div v-else>v-else块的内容</div>',
+		template: '<div><a :href="href">test</a></div>',
 		data: {
-			value: 1
+			href: 'https://www.imliutao.com'
 		}
 	}).$mount('#app');
 </script>

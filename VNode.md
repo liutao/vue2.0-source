@@ -13,10 +13,10 @@ VNode: {
 	componentInstance: Component | void; // VNode对象如果对应的是一个自定义组件，componentInstance保存相对应的vue实例
 	parent: VNode | void; // component placeholder node
 	raw: boolean; // contains raw HTML? (server only)
-	isStatic: boolean; // hoisted static node
+	isStatic: boolean; // 是否是静态内容
 	isRootInsert: boolean; // necessary for enter transition check
 	isComment: boolean; // empty comment placeholder?
-	isCloned: boolean; // is a cloned node?
-	isOnce: boolean; // is a v-once node?
+	isCloned: boolean; // 是否是clone的VNode对象
+	isOnce: boolean; // 是否是v-once元素的VNode对象
 }
 ```
