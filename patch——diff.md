@@ -96,7 +96,7 @@ function sameInputType (a, b) {
 
 唯一的一种情况，就是如果组件最外层包裹的元素上有`v-if`语句，则可以通过`v-else`添加多个跟元素。其实这种情况，在真实渲染时，也只有一个根元素。但是这种情况就有可能出现可以`v-if`和`v-else`的指令完全不同，这时就会走到下面的流程。
 
-## `diff`
+## `patchVnode`
 
 走到`patchVnode`方法的前提，就是我们上面所说的`oldVnode`和`vnode`是`sameVnode`，该方法的功能其实就是复用`dom`元素。我们来一步步看看它里面的逻辑处理。
 
@@ -239,3 +239,267 @@ export function renderStatic (
     if (isDef(i = data.hook) && isDef(i = i.postpatch)) i(oldVnode, vnode)
   }
 ```
+
+## `updateChildren`
+
+我们页面的`dom`是一个树状结构，上面所讲的`patchVnode`方法，是复用同一个`dom`元素，而如果新旧两个`VNnode`对象都有子元素，我们应该怎么去比较复用元素呢？这就是我们`updateChildren`方法所要做的事儿。
+
+```JavaScript
+  function updateChildren (parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
+    let oldStartIdx = 0
+    let newStartIdx = 0
+    let oldEndIdx = oldCh.length - 1
+    let oldStartVnode = oldCh[0]
+    let oldEndVnode = oldCh[oldEndIdx]
+    let newEndIdx = newCh.length - 1
+    let newStartVnode = newCh[0]
+    let newEndVnode = newCh[newEndIdx]
+    let oldKeyToIdx, idxInOld, elmToMove, refElm
+
+    // removeOnly使用在transition-group中，其它情况下都是false
+    const canMove = !removeOnly
+
+    // 新旧数组都没有遍历结束
+    while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+      if (isUndef(oldStartVnode)) {
+        oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
+      } else if (isUndef(oldEndVnode)) {
+        oldEndVnode = oldCh[--oldEndIdx]
+      // 头头比较
+      } else if (sameVnode(oldStartVnode, newStartVnode)) {
+        patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue)
+        oldStartVnode = oldCh[++oldStartIdx]
+        newStartVnode = newCh[++newStartIdx]
+      // 尾尾比较
+      } else if (sameVnode(oldEndVnode, newEndVnode)) {
+        patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue)
+        oldEndVnode = oldCh[--oldEndIdx]
+        newEndVnode = newCh[--newEndIdx]
+      // 头尾比较
+      } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+        patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
+        canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
+        oldStartVnode = oldCh[++oldStartIdx]
+        newEndVnode = newCh[--newEndIdx]
+      // 尾头比较
+      } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+        patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
+        canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+        oldEndVnode = oldCh[--oldEndIdx]
+        newStartVnode = newCh[++newStartIdx]
+      } else {
+        if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
+        idxInOld = isDef(newStartVnode.key) ? oldKeyToIdx[newStartVnode.key] : null
+        if (isUndef(idxInOld)) { // New element
+          createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm)
+          newStartVnode = newCh[++newStartIdx]
+        } else {
+          elmToMove = oldCh[idxInOld]
+          /* istanbul ignore if */
+          if (process.env.NODE_ENV !== 'production' && !elmToMove) {
+            warn(
+              'It seems there are duplicate keys that is causing an update error. ' +
+              'Make sure each v-for item has a unique key.'
+            )
+          }
+          if (sameVnode(elmToMove, newStartVnode)) {
+            patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
+            oldCh[idxInOld] = undefined
+            canMove && nodeOps.insertBefore(parentElm, newStartVnode.elm, oldStartVnode.elm)
+            newStartVnode = newCh[++newStartIdx]
+          } else {
+            // same key but different element. treat as new element
+            createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm)
+            newStartVnode = newCh[++newStartIdx]
+          }
+        }
+      }
+    }
+
+    if (oldStartIdx > oldEndIdx) {
+      refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
+      addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
+    } else if (newStartIdx > newEndIdx) {
+      removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
+    }
+  }
+```
+
+乍一看这一块代码，可能有点儿懵。具体内容其实不复杂，我们先大体看一下整个判断流程，之后通过几个例子来详细过一下。
+
+`oldStartIdx`、`newStartIdx`、`oldEndIdx`、`newEndIdx`都是指针，具体每一个指什么，相信大家都很明了，我们整个比较的过程，会不断的移动指针。
+
+`oldStartVnode`、`newStartVnode`、`oldEndVnode`、`newEndVnode`与上面的指针一一对应，是它们所指向的`VNode`结点。
+
+`while`循环在`oldCh`或`newCh`遍历结束后停止，否则会不断的执行循环流程。整个流程分为以下几种情况：
+
+1、 如果`oldStartVnode`未定义，则`oldCh`数组遍历的起始指针后移一位。
+
+```JavaScript
+  if (isUndef(oldStartVnode)) {
+    oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
+  }
+```
+
+注：见第七种情况，`key`值相同可能会置为undefined
+
+2、 如果`oldEndVnode`未定义，则`oldCh`数组遍历的起始指针前移一位。
+
+```JavaScript
+  else if (isUndef(oldEndVnode)) {
+    oldEndVnode = oldCh[--oldEndIdx]
+  } 
+```
+
+注：见第七种情况，`key`值相同可能会置为undefined
+
+3、`sameVnode(oldStartVnode, newStartVnode)`，这里判断两个数组起始指针所指向的对象是否可以复用。如果返回真，则先调用`patchVnode`方法复用`dom`元素并递归比较子元素，然后`oldCh`和`newCh`的起始指针分别后移一位。
+
+```JavaScript
+  else if (sameVnode(oldStartVnode, newStartVnode)) {
+    patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue)
+    oldStartVnode = oldCh[++oldStartIdx]
+    newStartVnode = newCh[++newStartIdx]
+  }
+```
+
+4、`sameVnode(oldEndVnode, newEndVnode)`，这里判断两个数组结束指针所指向的对象是否可以复用。如果返回真，则先调用`patchVnode`方法复用`dom`元素并递归比较子元素，然后`oldCh`和`newCh`的结束指针分别前移一位。
+
+```JavaScript
+  else if (sameVnode(oldEndVnode, newEndVnode)) {
+    patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue)
+    oldEndVnode = oldCh[--oldEndIdx]
+    newEndVnode = newCh[--newEndIdx]
+  } 
+```
+
+5、`sameVnode(oldStartVnode, newEndVnode)`，这里判断`oldCh`起始指针指向的对象和`newCh`结束指针所指向的对象是否可以复用。如果返回真，则先调用`patchVnode`方法复用`dom`元素并递归比较子元素，因为复用的元素在`newCh`中是结束指针所指的元素，所以把它插入到`oldEndVnode.elm`的前面。最后`oldCh`的起始指针后移一位，`newCh`的起始指针分别前移一位。
+
+```JavaScript
+  else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+    patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
+    canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
+    oldStartVnode = oldCh[++oldStartIdx]
+    newEndVnode = newCh[--newEndIdx]
+  }
+```
+
+6、`sameVnode(oldEndVnode, newStartVnode)`，这里判断`oldCh`结束指针指向的对象和`newCh`起始指针所指向的对象是否可以复用。如果返回真，则先调用`patchVnode`方法复用`dom`元素并递归比较子元素，因为复用的元素在`newCh`中是起始指针所指的元素，所以把它插入到`oldStartVnode.elm`的前面。最后`oldCh`的结束指针前移一位，`newCh`的起始指针分别后移一位。
+
+```JavaScript
+  else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+    patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
+    canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+    oldEndVnode = oldCh[--oldEndIdx]
+    newStartVnode = newCh[++newStartIdx]
+  }
+```
+
+7、如果上述六种情况都不满足，则走到这里。前面的比较都是头尾组合的比较，这里的情况，稍微更加复杂一些，其实主要就是根据`key`值来复用元素。
+
+① 遍历`oldCh`数组，找出其中有`key`的对象，并以`key`为键，索引值为`value`，生成新的对象`oldKeyToIdx`。
+
+```JavaScript
+if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
+function createKeyToOldIdx (children, beginIdx, endIdx) {
+  let i, key
+  const map = {}
+  for (i = beginIdx; i <= endIdx; ++i) {
+    key = children[i].key
+    if (isDef(key)) map[key] = i
+  }
+  return map
+}
+```
+
+② 查询`newStartVnode`是否有`key`值，并查找`oldKeyToIdx`是否有相同的`key`。
+
+```JavaScript
+  idxInOld = isDef(newStartVnode.key) ? oldKeyToIdx[newStartVnode.key] : null
+```
+
+③ 如果`newStartVnode`没有`key`或`oldKeyToIdx`没有相同的`key`，则调用`createElm`方法创建新元素，`newCh`的起始索引后移一位。
+
+```JavaScript
+  if (isUndef(idxInOld)) { // New element
+    createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm)
+    newStartVnode = newCh[++newStartIdx]
+  } 
+```
+
+④ `elmToMove`保存的是要移动的元素，如果`sameVnode(elmToMove, newStartVnode)`返回真，说明可以复用，这时先调用`patchVnode`方法复用`dom`元素并递归比较子元素，重置`oldCh`中相对于的元素为`undefined`，然后把当前元素插入到`oldStartVnode.elm`前面，`newCh`的起始索引后移一位。如果`sameVnode(elmToMove, newStartVnode)`返回假，例如`tag`名不同，则调用`createElm`方法创建新元素，`newCh`的起始索引后移一位。
+
+```JavaScript
+  elmToMove = oldCh[idxInOld]
+  if (sameVnode(elmToMove, newStartVnode)) {
+    patchVnode(elmToMove, newStartVnode, insertedVnodeQueue)
+    oldCh[idxInOld] = undefined
+    canMove && nodeOps.insertBefore(parentElm, newStartVnode.elm, oldStartVnode.elm)
+    newStartVnode = newCh[++newStartIdx]
+  } else {
+    // same key but different element. treat as new element
+    createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm)
+    newStartVnode = newCh[++newStartIdx]
+  }
+```
+
+上面的内容比较枯燥，我们一起通过几个例子来看一下它的处理流程。
+
+### 没有`key`值的情况
+
+假设`oldCh`上有五个元素`a`、`b`、`c`、`d`、`e`，`newCh`有六个元素`d`、`e`、`b`、`f`、`d`、`a`，且没有`key`值。初始情况下，页面中`dom`顺序为`abcde`。
+
+第一次`while`循环，`oldStartVnode`和`newEndVnode`都是`a`，所以会走到第五种情况,`a`元素会把插入到`e`元素的下一个元素前。此时页面中`dom`变为`bcdea`，`oldStartVnode`指向`b`，`newEndVnode`指向`d`。
+
+第二次`while`循环，因为头尾都不相同，走到最后第七种情况，然后会创建新的元素`d`并插入到`b`前面。此时页面中`dom`变为`dbcdea`，`newStartVnode`指向`e`。
+
+第三次`while`循环，`oldEndVnode`和`newStartVnode`都是`e`，所以会走到第六种情况，`e`元素会把插入到`b`元素之前。此时页面中`dom`变为`debcda`，`oldEndVnode`指向`d`，`newStartVnode`指向`b`。
+
+第四次`while`循环，`oldStartVnode`和`newStartVnode`都指向`b`，所以会走到第三种情况，直接复用`b`元素。此时页面中`dom`依然为`debcda`，`oldStartVnode`指向`c`，`newStartVnode`指向`f`。
+
+第五次`while`循环，`oldEndVnode`和`newEndVnode`都指向`d`，所以会走到第四种情况，直接复用`d`元素。此时页面中`dom`依然为`debcda`，`oldEndVnode`指向`c`，`newEndVnode`指向`f`。
+
+第六次`while`循环，两个数组中都只剩下一个没有遍历的元素且不相同，所以会走到第七种情况。然后会创建新的元素`f`并插入到`c`前面。此时页面中`dom`变为`debfcda`，`newStartVnode`指向`b`。
+
+这时`newStartIdx`会大于`newEndIdx`，所以会终止循环。这时我们发现，页面中多了`c`元素。所以`updateChildren`方法在循环之后还有删除无用的旧结点的操作。
+
+```JavaScript
+if (oldStartIdx > oldEndIdx) {
+  refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
+  addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
+} else if (newStartIdx > newEndIdx) {
+  removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
+}
+```
+
+第一种情况是`oldCh`中的元素全部复用。则依次把`newStartIdx`和`newEndIdx`之间的元素插入到相应的位置。
+
+第二种情况是`newCh`中的元素全部复用。则依次删除`oldStartIdx`和`oldEndIdx`之间的元素，我们上面例子中的`c`元素在这里就会被删除。
+
+### 有`key`值的情况
+
+假设`oldCh`上有四个元素`a`、`div[k=1]`、`footer[k=3]`、`span[k=2]`，`newCh`有四个元素`p[k=1]`、`span[key=2]`、`div`、`footer[key=3]`。初始情况下，页面中`dom`顺序为`a、div[k=1]、p、footer[k=3]、span[k=2]`。
+
+第一次`while`循环，头尾都不可复用，所以会走到第七种情况，此时会生成`oldKeyToIdx`，如下：
+
+```JavaScript
+oldKeyToIdx = {
+  '1': 1,
+  '2': 3,
+  '3': 2
+}
+```
+
+`newStartVnode`元素`p[key=1]`根据`key`值比较，`elmToMove`会指向`div[k=1]`，但因为它们标签名不一样，所以`sameVNode`判断会返回`false`。所以直接插入到`a`前面，页面中`dom`变为`p[key=1]、a、div[k=1]、footer[k=3]、span[k=2]`，`newStartVnode`指向`span[key=2]`。
+
+第二次`while`循环，同样头尾都不可复用，所以会走到第七种情况，`newStartVnode`元素`span[key=2]`根据`key`值比较，`elmToMove`会指向`span[k=2]`，两元素可以复用，`span[k=2]`会被插入到`a`前面，页面中`dom`变为`p[key=1]、span[k=2]、a、div[k=1]、footer[k=3]`，`newStartVnode`指向`div`。同时`oldCh`变为[`a`, `div[k=1]`, `p`, `footer[k=3]`, undefined]。
+
+第三次`while`循环，`oldEndVnode`返回`undefined`所以会走到第二种情况。页面中`dom`不变，`oldEndVnode`指向`footer[k=3]`。
+
+第四次`while`循环，头尾依然不可复用，走到第七种情况。`newStartVnode`元素`div`没有`key`值，直接插入到`a`之前，页面中`dom`变为`p[key=1]、span[k=2]、div、a、div[k=1]、footer[k=3]`，`newStartVnode`指向`footer[key=3]`。
+
+第五次`while`循环，`oldEndVnode`和`newStartVnode`都指向`footer[key=3]`，走到第六种情况。`footer[key=3]`元素会把插入到`a`元素之前。此时页面中`dom`变为`p[key=1]、span[k=2]、div、footer[k=3]、a、div[k=1]`，`oldEndVnode`指向`div[k=1]`，`newStartVnode`指向超出`newCh`范围，指向`undefined`。
+
+这时`newStartIdx`会大于`newEndIdx`，所以会终止循环。与之前例子一样，最终会删除多余的`a、div[k=1]`。
+
+以上基本就是`vdom`的`diff`相关主要内容。
