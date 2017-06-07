@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+	<style type="text/css">
+		a,em,div,span,p,nav{
+			display: inline-block;
+			height: 20px;
+			width: 80px;
+			background: red;
+		}
+		em{
+			background: yellow;
+		}
+		div{
+			background: green;
+		}
+		span{
+			background: #000;
+		}
+		nav{
+			background: pink;
+		}
+		p{
+			background: blue;
+		}
+		#app, #app > div{
+			background: #fff;
+		}
+	</style>
+</head>
+<body>
+<div id="app">
+	<div v-if="init"><a href="https://www.imliutao.com"></a><div></div><span></span><p></p><em></em></div>
+	<div v-else><p></p><em></em><div></div><nav></nav><p></p><a href="https://www.imliutao.com"></a></div>
+</div>
+<script type="text/javascript">
+	let vue = new Vue({
+		el: '#app',
+		data: {
+			init: true
+		}
+	}).$mount('#app');
+</script>
+</body>
+</html>
