@@ -7,7 +7,7 @@
 </head>
 <body>
 <div id="app">
-	<my-component :name='name'></my-component>
+	<my-component></my-component>
 </div>
 <script>
 	new Vue({
@@ -16,13 +16,7 @@
 			},
 			components: {
 				myComponent: {
-					props: {
-						name: String
-					},
-					// template: `<div>{{name}}</div>`,
-					render(h){
-						return h('div', this._v(this.name))
-					}
+					template: `<div>test</div>`
 				}
 			}
 		}
