@@ -27,6 +27,10 @@ vue 2.2.6源码分析
 
 [vdom——VNode](vdom——VNode.md)
 
+[patch——创建dom](patch——创建dom.md)
+
+[patch——diff](patch——diff.md)
+
 
 对各个指令的处理
 
@@ -37,5 +41,7 @@ vue 2.2.6源码分析
 以下是整理一些比较零散的数据，主要是记录结构中每个数据表示什么意思，会不断完善更新：
 
 [Vue全局属性](Vue-globals.md)
+
+[Vue实例属性](Vue实例属性.md)
 
 [AstElement](AstElement.md)
