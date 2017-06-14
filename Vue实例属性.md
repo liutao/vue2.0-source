@@ -1,23 +1,31 @@
 ```JavaScript
+	vm._uid // 自增的id
+	vm._isVue // 标示是vue对象，避免被observe
+
+```
+
+## `vm.$options`
+
+```JavaScript
 declare type ComponentOptions = {
   // data
-  data: Object | Function | void;  // 传入data数据
+  data: Object | Function | void;  // 传入的data数据
   props?: { [key: string]: PropOptions }; // props传入的数据
-  propsData?: ?Object;  // 根Vue对象传入props数据
-  computed?: {
+  propsData?: ?Object;  // 对于自定义组件，父级通过`props`传过来的数据
+  computed?: {  // 传入的计算属性
     [key: string]: Function | {
       get?: Function;
       set?: Function;
       cache?: boolean
     }
   };
-  methods?: { [key: string]: Function };
-  watch?: { [key: string]: Function | string };
+  methods?: { [key: string]: Function }; // 传入的方法
+  watch?: { [key: string]: Function | string };  // 传入的watch
 
   // DOM
-  el?: string | Element;
-  template?: string;
-  render: (h: () => VNode) => VNode;
+  el?: string | Element;  // 传入的el字符串
+  template?: string;  // 传入的模板字符串
+  render: (h: () => VNode) => VNode;  // 传入的render函数
   renderError?: (h: () => VNode, err: Error) => VNode;
   staticRenderFns?: Array<() => VNode>;
 
@@ -60,8 +68,8 @@ declare type ComponentOptions = {
   _isComponent?: true;  // 是否是组件
   _propKeys?: Array<string>;
   _parentVnode?: VNode; // 当前组件，在父组件中的VNode对象
-  _parentListeners?: ?Object; // 当前组件，在父组件实例中，VNode上绑定的事件
-  _renderChildren?: ?Array<VNode>; // 自定义标签子元素的VNode数组
+  _parentListeners?: ?Object; // 当前组件，在父组件上绑定的事件
+  _renderChildren?: ?Array<VNode>; // 父组件中定义在当前元素内的子元素的VNode数组（slot）
   _componentTag: ?string;  // 自定义标签名
   _scopeId: ?string;
   _base: Class<Component>; // Vue
