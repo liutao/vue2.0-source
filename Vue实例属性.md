@@ -19,9 +19,10 @@
   vm._events
   vm._hasHookEvent
 
-  vm.$vnode
-  vm._vnode
-  vm._staticTrees = null
+  vm.$vnode // 当前自定义组件在父组件中的vnode，等同于vm.$options._parentVnode
+  vm._vnode // 当前组件的vnode
+  vm._staticTrees // 当前组件模板内分析出的静态内容的render函数数组
+  vm.$el // 当前组件对应的根元素
 
   vm.$slots // 定义在父组件中的slots
   vm.$scopedSlots = emptyObject
@@ -33,7 +34,7 @@
   vm._props // 被observe的存储props数据的对象
   vm._data // 被observe的存储data数据的对象
   vm._computedWatchers // 保存计算属性创建的watcher对象
-  
+
 
 ```
 

@@ -7,16 +7,26 @@
 </head>
 <body>
 <div id="app">
+	{{name}}
 	<my-component></my-component>
+	<my-another-component></my-another-component>
 </div>
 <script>
-	new Vue({
+	let vue = new Vue({
 			data:{
 				name: '刘涛'
 			},
 			components: {
 				myComponent: {
-					template: `<div>test</div>`
+					template: `<div>test{{test}}</div>`,
+					data(){
+						return {
+							test: '哈哈哈哈'
+						}
+					}
+				},
+				myAnotherComponent: {
+					template: `<div>another</div>`
 				}
 			}
 		}

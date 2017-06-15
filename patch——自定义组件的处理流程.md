@@ -138,3 +138,144 @@ function initInternalComponent (vm: Component, options: InternalComponentOptions
 
 同时，我们还给`vm.$options`添加了一些内部属性，具体每个属性的含义，我总结在了[Vue实例属性](Vue实例属性.md)中。
 
+`new vnodeComponentOptions.Ctor(options)`仅仅是初始化了一个新的`Vue`实例，真正挂载到页面中，是通过`child.$mount(hydrating ? vnode.elm : undefined, hydrating)`进行的。上面可以知道`hydrating`是`false`，所以第一个参数是`undefined`，第二个参数是`false`。
+
+`$mount`方法会先处理模板，最终还是调用`src/core/instance/lifecycle`中的`Vue.prototype._update`方法渲染组件。
+
+```JavaScript
+  vm.$el = vm.__patch__(
+    vm.$el, vnode, hydrating, false /* removeOnly */,
+    vm.$options._parentElm,
+    vm.$options._refElm
+  )
+```
+
+又回到了多次谈到的`__patch__`方法。
+
+```JavaScript
+  function patch (oldVnode, vnode, hydrating, removeOnly, parentElm, refElm) {
+    ...
+    let isInitialPatch = false
+    const insertedVnodeQueue = []
+
+    if (isUndef(oldVnode)) {
+      // empty mount (likely as component), create new root element
+      isInitialPatch = true
+      createElm(vnode, insertedVnodeQueue, parentElm, refElm)
+    } else {
+      ...
+    }
+
+    invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch)
+    return vnode.elm
+  }
+```
+
+这一次`oldVnode`就是`undefined`，所以直接走到`if`块代码中，然后调用`createElm`方法来创建`dom`结点。之后的流程，见[patch——创建dom](patch——创建dom.md)。
+
+## `prepatch`
+
+从名字我们也可以看出，该方法是在进行`diff`操作之前进行的处理。它的调用之处在`patchVnode`中：
+
+```JavaScript
+  function patchVnode (oldVnode, vnode, insertedVnodeQueue, removeOnly) {
+    if (oldVnode === vnode) {
+      return
+    }
+    ...
+    let i
+    const data = vnode.data
+    if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
+      i(oldVnode, vnode)
+    }
+    ...
+  }
+```
+
+来看看它里面进行了哪些操作。
+
+```JavaScript
+  prepatch (oldVnode: MountedComponentVNode, vnode: MountedComponentVNode) {
+    const options = vnode.componentOptions
+    const child = vnode.componentInstance = oldVnode.componentInstance
+    updateChildComponent(
+      child,
+      options.propsData, // updated props
+      options.listeners, // updated listeners
+      vnode, // new parent vnode
+      options.children // new children
+    )
+  },
+```
+
+该方法接受两个参数，分别是旧新`Vnode`实例。如果数据有所更新，会再次调用`render`函数生成新的`VNode`实例，这个过程中会再次调用`createComponent`函数生成新的自定义组件的`vnode`。
+
+调用`prepatch`钩子函数的前提，说明该自定义组件得到了复用，也就是说该自定义组件本身没有被替换，我们只需要根据传入的`props`或者`slots`等来更新子模板的内容。这里我们直接复用`oldVnode.componentInstance`，然后调用`updateChildComponent`方法来更新子内容。
+
+```JavaScript
+export function updateChildComponent (
+  vm: Component,
+  propsData: ?Object,
+  listeners: ?Object,
+  parentVnode: VNode,
+  renderChildren: ?Array<VNode>
+) {
+  
+  const hasChildren = !!(
+    renderChildren ||               // has new static slots
+    vm.$options._renderChildren ||  // has old static slots
+    parentVnode.data.scopedSlots || // has new scoped slots
+    vm.$scopedSlots !== emptyObject // has old scoped slots
+  )
+  // 更新vnode相关关系
+  vm.$options._parentVnode = parentVnode
+  vm.$vnode = parentVnode // update vm's placeholder node without re-render
+  if (vm._vnode) { // update child tree's parent
+    vm._vnode.parent = parentVnode
+  }
+  vm.$options._renderChildren = renderChildren
+
+  // 更新 props
+  if (propsData && vm.$options.props) {
+    observerState.shouldConvert = false
+    if (process.env.NODE_ENV !== 'production') {
+      observerState.isSettingProps = true
+    }
+    const props = vm._props
+    const propKeys = vm.$options._propKeys || []
+    for (let i = 0; i < propKeys.length; i++) {
+      const key = propKeys[i]
+      props[key] = validateProp(key, vm.$options.props, propsData, vm)
+    }
+    observerState.shouldConvert = true
+    if (process.env.NODE_ENV !== 'production') {
+      observerState.isSettingProps = false
+    }
+    // keep a copy of raw propsData
+    vm.$options.propsData = propsData
+  }
+  // 更新 listeners
+  if (listeners) {
+    const oldListeners = vm.$options._parentListeners
+    vm.$options._parentListeners = listeners
+    updateComponentListeners(vm, listeners, oldListeners)
+  }
+  // 处理slots并强制更新
+  if (hasChildren) {
+    vm.$slots = resolveSlots(renderChildren, parentVnode.context)
+    vm.$forceUpdate()
+  }
+}
+```
+
+该方法所要做的工作主要有以下几个方面。
+
+1、更新`vm`上绑定的有关`vnode`的各项数据。之前我们通过`vm.$options._parentVnode`、`vm.$vnode`、`vm.$options._renderChildren`等保存了当前自定义组件在父组件中的`vnode`以及在父组件中当前自定义组件的子元素，`patch`时会生成新的`vnode`，所以需要更新相应的内容。
+
+2、更新保存父组件传递过来的数据`propsData`，并对传递的数据类型等进行校验。
+
+3、更新绑定的事件
+
+4、更新`slots`相关内容
+
+
