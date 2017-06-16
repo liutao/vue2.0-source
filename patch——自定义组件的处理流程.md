@@ -278,4 +278,32 @@ export function updateChildComponent (
 
 4、更新`slots`相关内容
 
+## `insert`
 
+`insert`方法的调用是在`dom`插入到页面之后调用的。具体方法是在`__patch__`中的`invokeInsertHook`方法。
+
+```JavaScript
+  function invokeInsertHook (vnode, queue, initial) {
+    if (isTrue(initial) && isDef(vnode.parent)) {
+      vnode.parent.data.pendingInsert = queue
+    } else {
+      for (let i = 0; i < queue.length; ++i) {
+        queue[i].data.hook.insert(queue[i])
+      }
+    }
+  }
+```
+
+`insert`钩子函数的具体实现如下所示：
+
+```JavaScript
+  insert (vnode: MountedComponentVNode) {
+    if (!vnode.componentInstance._isMounted) {
+      vnode.componentInstance._isMounted = true
+      callHook(vnode.componentInstance, 'mounted')
+    }
+    if (vnode.data.keepAlive) {
+      activateChildComponent(vnode.componentInstance, true /* direct */)
+    }
+  },
+```
