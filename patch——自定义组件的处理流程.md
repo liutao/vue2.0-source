@@ -307,3 +307,96 @@ export function updateChildComponent (
     }
   },
 ```
+
+我们发现，这里的主要操作是调用`mounted`钩子函数。回顾一下之前讲的调用`mounted`钩子函数的代码：
+
+```JavaScript
+  if (vm.$vnode == null) {
+    vm._isMounted = true
+    callHook(vm, 'mounted')
+  }
+```
+
+`vm.$vnode`保存的是上面`init`时传入的`_parentVnode`，即自定义组件在父组件中的`VNode`对象。根组件的该值为`null`，所以在上面代码中调用`mounted`，而对于自定义组件，则在`insert`钩子函数中调用。
+
+## `destroy`
+
+该钩子函数的调用，是在自定义组件销毁时调用。
+
+```JavaScript
+  destroy (vnode: MountedComponentVNode) {
+    if (!vnode.componentInstance._isDestroyed) {
+      if (!vnode.data.keepAlive) {
+        vnode.componentInstance.$destroy()
+      } else {
+        deactivateChildComponent(vnode.componentInstance, true /* direct */)
+      }
+    }
+  }
+```
+
+在`patch`过程中调用该钩子函数，是因为在做`diff`的过程中，要删除当前的组件。对于普通组件，我们直接调用`vnode.componentInstance.$destroy()`方法来销毁。
+
+```JavaScript
+  Vue.prototype.$destroy = function () {
+    const vm: Component = this
+    if (vm._isBeingDestroyed) {
+      return
+    }
+    callHook(vm, 'beforeDestroy')
+    vm._isBeingDestroyed = true
+    // remove self from parent
+    const parent = vm.$parent
+    if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
+      remove(parent.$children, vm)
+    }
+    // teardown watchers
+    if (vm._watcher) {
+      vm._watcher.teardown()
+    }
+    let i = vm._watchers.length
+    while (i--) {
+      vm._watchers[i].teardown()
+    }
+    // remove reference from data ob
+    // frozen object may not have observer.
+    if (vm._data.__ob__) {
+      vm._data.__ob__.vmCount--
+    }
+    // call the last hook...
+    vm._isDestroyed = true
+    // invoke destroy hooks on current rendered tree
+    vm.__patch__(vm._vnode, null)
+    // fire destroyed hook
+    callHook(vm, 'destroyed')
+    // turn off all instance listeners.
+    vm.$off()
+    // remove __vue__ reference
+    if (vm.$el) {
+      vm.$el.__vue__ = null
+    }
+    // remove reference to DOM nodes (prevents leak)
+    vm.$options._parentElm = vm.$options._refElm = null
+  }
+}
+```
+
+函数定义如上：
+
+1、调用`beforeDestroy`钩子函数，并通过`vm._isBeingDestroyed`来标识正在销毁，避免重复调用。
+
+2、从父元素中删除当前元素。
+
+3、销毁`watcher`
+
+4、`vm._data_`的监听对象的`vmCount`减1
+
+5、标识`vm`已销毁
+
+6、销毁当前组件
+
+7、调用`destroyed`钩子函数
+
+8、销毁事件
+
+9、消除各种引用的资源

@@ -12,9 +12,9 @@
   vm._watcher = null
   vm._inactive = null
   vm._directInactive = false
-  vm._isMounted = false
-  vm._isDestroyed = false
-  vm._isBeingDestroyed = false
+  vm._isMounted = false // 标识是否已挂载
+  vm._isDestroyed = false // 标识是否已销毁
+  vm._isBeingDestroyed = false // 标识是否正在销毁
  
   vm._events
   vm._hasHookEvent
