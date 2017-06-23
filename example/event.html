@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	<p @click.native="change" @mouseenter="function(){}">{{test}}</p>
+	<input @input="indata($event)" @keydown.enter="show"/>
+	<my-component @click="change"></my-component>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			test: '测试数据',
+			my: {
+				hehe(test){
+					alert(test);
+				}
+			}
+		},
+		methods: {
+			change(){
+				this.test = '修改后的测试数据';
+			},
+			indata(event){
+				this.test = event.target.value;
+			},
+			show(){
+				alert(this.test);
+			}
+		},
+		components: {
+			myComponent: {
+				data(){
+					return {
+						haha: 'gagag'
+					}
+				},
+				template: `<p @click="h">{{haha}}</p>`,
+				methods: {
+					h(){
+						this.$emit('click');
+					}
+				}
+			}
+		}
+	})
+</script>
+</body>
+</html>

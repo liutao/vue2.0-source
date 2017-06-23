@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="https://unpkg.com/vue"></script>
+</head>
+<body>
+<div id="test">
+	<smart-list></smart-list>
+</div>
+<script type="text/javascript">
+	var EmptyList = { /* ... */ }
+	var TableList = { /* ... */ }
+	var OrderedList = { /* ... */ }
+	var UnorderedList = {
+		template: '<ul><li v-for="item in items">{{item.name}}</li></ul>',
+	  	inject: ['items']
+	}
+	Vue.component('smart-list', {
+	  functional: true,
+	  render: function (createElement, context) {
+	    function appropriateListComponent () {
+	      // var items = context.props.items
+	      // console.log(context);
+	      // if (items.length === 0)           return EmptyList
+	      // if (typeof items[0] === 'object') return TableList
+	      // if (context.props.isOrdered)      return OrderedList
+	      // UnorderedList.data = ()=>{
+	      // 	return {items: items};
+	      // }
+	      return UnorderedList
+	    }
+	    return createElement(
+	      appropriateListComponent(),
+	      context.data,
+	      context.children
+	    )
+	  },
+	  // props: {
+	  //   items: {
+	  //     type: Array,
+	  //     required: true
+	  //   },
+	  //   isOrdered: Boolean
+	  // },
+	});
+	new Vue({
+		// data: {
+		// 	items: [{
+		// 		name: 'name1'
+		// 	}, {
+		// 		name: 'name2'
+		// 	}, {
+		// 		name: 'name3'
+		// 	}]
+		// },
+		provide: {
+			items: [{
+				name: 'name1'
+			}, {
+				name: 'name2'
+			}, {
+				name: 'name3'
+			}]
+		}
+
+	}).$mount('#test');
+</script>
+</body>
+</html>

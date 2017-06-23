@@ -24,7 +24,7 @@
   vm._staticTrees // 当前组件模板内分析出的静态内容的render函数数组
   vm.$el // 当前组件对应的根元素
 
-  vm.$slots // 定义在父组件中的slots
+  vm.$slots // 定义在父组件中的slots，是个对象键为name，值为响应的数组
   vm.$scopedSlots = emptyObject
   // 内部render函数使用的创建vnode的方法
   vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
