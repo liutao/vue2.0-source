@@ -1,6 +1,6 @@
 ```JavaScript
-	vm._uid // 自增的id
-	vm._isVue // 标示是vue对象，避免被observe
+  vm._uid // 自增的id
+  vm._isVue // 标示是vue对象，避免被observe
   vm._renderProxy // Proxy代理对象
   vm._self // 当前vm实例
 
