@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	<keep-alive>
+		<!-- <my-component></my-component>
+		<my-component2></my-component2> -->
+		<component :is="which"></component>
+	</keep-alive>
+</div>
+
+<script type="text/javascript">
+	Vue.component('my-component', {
+		template: `<div id="sub" >
+			{{text}}
+		</div>`,
+		data(){
+			return {
+				text: '子模板中的内容'
+			}
+		}
+	});
+	Vue.component('my-component2', {
+		template: `<div id="sub" >
+			{{text}}
+		</div>`,
+		data(){
+			return {
+				text: '子模板中的内容2'
+			}
+		}
+	});
+	new Vue({
+		el: '#app',
+		data: {
+			which: 'my-component2'
+		}
+	});
+</script>
+</body>
+</html>

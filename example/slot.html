@@ -7,32 +7,62 @@
 </head>
 <body>
 <div id="app">
-	<app-layout>
+	<!-- <app-layout>
 		<p>gaga</p>
 		<h1 slot="header">这里可能是一个页面标题</h1>
 		<p>主要内容的一个段落。</p>
 		<div>另一个主要段落。<p slot="footer">这里有一些联系信息</p></div>
 		
 		<p>gagagsgs</p>
+	</app-layout> -->
+	<app-layout :items="items">
+		<template slot="item" scope="aaa">
+			<li>{{ aaa.text }}</li>
+		</template>
 	</app-layout>
 </div>
 <script type="text/javascript">
+	// var vm = new Vue({
+	// 	el: '#app',
+	// 	components: {
+	// 		AppLayout: {
+	// 			template: '<div class="container">\
+	// 				<header>\
+	// 					<slot name="header"></slot>\
+	// 				</header>\
+	// 				<main>\
+	// 					<slot></slot>\
+	// 				</main>\
+	// 				<footer>\
+	// 					fd<slot name="footer"></slot>\
+	// 				</footer>\
+	// 			</div>'
+	// 		}
+	// 	}
+	// })
 	var vm = new Vue({
 		el: '#app',
 		components: {
 			AppLayout: {
-				template: '<div class="container">\
-					<header>\
-						<slot name="header"></slot>\
-					</header>\
-					<main>\
-						<slot></slot>\
-					</main>\
-					<footer>\
-						fd<slot name="footer"></slot>\
-					</footer>\
-				</div>'
+				template: '<ul>\
+						<slot name="item"\
+							v-for="item in items"\
+							:text="item.text">\
+						</slot>\
+					</ul>',
+				props: {
+					items: Array
+				}
 			}
+		},
+		data: {
+			items: [{
+				text: 'text1'
+			}, {
+				text: 'text2'
+			}, {
+				text: 'text3'
+			}]
 		}
 	})
 </script>
