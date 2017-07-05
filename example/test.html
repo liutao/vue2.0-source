@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+	<style type="text/css">
+		.fade-enter-active, .fade-leave-active {
+			transition: opacity .5s
+		}
+		.fade-appear, .fade-appear-to {
+			width: 50px
+		}
+		.fade-appear-active{
+			transition: width 10s
+		}
+		.fade-enter, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+			opacity: 0
+		}
+	</style>
+</head>
+<body>
+<div id="app">
+	<span @click="btn">toggle</span>
+	
+	<my-component v-show="show"></my-component>
+	<other></other>	
+</div>
+
+<script type="text/javascript">
+	Vue.component('my-component', {
+		template: `<div id="sub" >
+			{{text}}
+		</div>`,
+		data(){
+			return {
+				text: '子模板中的内容'
+			}
+		}
+	});
+
+	new Vue({
+		el: '#app',
+		data: {
+			// which: 'my-component'
+			show: true
+		}, 
+		components: {
+			other: {
+				render(){
+					console.log(this.$vnode);
+				}
+			}
+		},
+		methods: {
+			btn(){
+				this.show = !this.show;
+			}
+		},
+	});
+</script>
+</body>
+</html>
