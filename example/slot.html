@@ -13,11 +13,6 @@
 		<div>另一个主要段落。</div>
 		<p slot="footer">这里有一些联系信息</p>
 	</app-layout>
-	<!-- <app-layout :items="items">
-		<template slot="item" scope="aaa">
-			<li>{{ aaa.text }}</li>
-		</template>
-	</app-layout> -->
 </div>
 <script type="text/javascript">
 	var vm = new Vue({
@@ -30,6 +25,7 @@
 					</header>\
 					<main>\
 						<slot></slot>\
+						<slot name="notExist"><p>这是降级使用的段落</p></slot>\
 					</main>\
 					<footer>\
 						<slot name="footer"></slot>\
@@ -38,31 +34,6 @@
 			}
 		}
 	})
-	// var vm = new Vue({
-	// 	el: '#app',
-	// 	components: {
-	// 		AppLayout: {
-	// 			template: '<ul>\
-	// 					<slot name="item"\
-	// 						v-for="item in items"\
-	// 						:text="item.text">\
-	// 					</slot>\
-	// 				</ul>',
-	// 			props: {
-	// 				items: Array
-	// 			}
-	// 		}
-	// 	},
-	// 	data: {
-	// 		items: [{
-	// 			text: 'text1'
-	// 		}, {
-	// 			text: 'text2'
-	// 		}, {
-	// 			text: 'text3'
-	// 		}]
-	// 	}
-	// })
 </script>
 </body>
 </html>

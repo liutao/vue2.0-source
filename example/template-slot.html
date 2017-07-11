@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	<app-layout :items="items">
+		<template slot="item" scope="aaa">
+			<li>{{ aaa.text }}{{ aaa.name }}</li>
+		</template>
+	</app-layout>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		components: {
+			AppLayout: {
+				template: '<ul>\
+						<slot name="item"\
+							v-for="item in items"\
+							:text="item.text" v-bind="{name: \'liutao\'}">\
+						</slot>\
+					</ul>',
+				props: {
+					items: Array
+				}
+			}
+		},
+		data: {
+			items: [{
+				text: 'text1'
+			}, {
+				text: 'text2'
+			}, {
+				text: 'text3'
+			}]
+		}
+	})
+</script>
+
+</body>
+</html>
