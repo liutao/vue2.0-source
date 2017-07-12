@@ -7,31 +7,33 @@
 </head>
 <body>
 <div id="app">
-	<p @click.native="change" @mouseenter="function(){}">{{test}}</p>
-	<input @input="indata($event)" @keydown.enter="show"/>
-	<my-component @click="change"></my-component>
+	<!-- <p @click.native="change" @mouseenter="function(){}">{{test}}</p>
+	<input @input="indata($event)" @keydown.enter="show"/> -->
+	<my-component @click.native="change"></my-component>
+	<!-- <p @click="show">{{text}}</p> -->
 </div>
 <script type="text/javascript">
 	var vm = new Vue({
 		el: '#app',
-		data: {
-			test: '测试数据',
-			my: {
-				hehe(test){
-					alert(test);
-				}
-			}
-		},
+		// data: {
+		// 	test: '测试数据',
+		// 	my: {
+		// 		hehe(test){
+		// 			alert(test);
+		// 		}
+		// 	}
+		// },
 		methods: {
 			change(){
-				this.test = '修改后的测试数据';
+				alert('hah');
+				// this.test = '修改后的测试数据';
 			},
-			indata(event){
-				this.test = event.target.value;
-			},
-			show(){
-				alert(this.test);
-			}
+			// indata(event){
+			// 	this.test = event.target.value;
+			// },
+			// show(){
+			// 	alert(this.test);
+			// }
 		},
 		components: {
 			myComponent: {
@@ -40,15 +42,26 @@
 						haha: 'gagag'
 					}
 				},
-				template: `<p @click="h">{{haha}}</p>`,
-				methods: {
-					h(){
-						this.$emit('click');
-					}
-				}
+				// template: `<p @click="h">{{haha}}</p>`,
+				template: `<p >{{haha}}</p>`,
+				// methods: {
+				// 	h(){
+				// 		this.$emit('click');
+				// 	}
+				// }
 			}
 		}
 	})
+	// var vm = new Vue({
+	// 	data: {
+	// 		text: '要显示的文本'
+	// 	},
+	// 	methods: {
+	// 		show(){
+	// 			alert(this.text);
+	// 		}
+	// 	}
+	// }).$mount('#app');
 </script>
 </body>
 </html>

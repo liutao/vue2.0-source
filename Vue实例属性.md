@@ -16,8 +16,8 @@
   vm._isDestroyed = false // 标识是否已销毁
   vm._isBeingDestroyed = false // 标识是否正在销毁
  
-  vm._events
-  vm._hasHookEvent
+  vm._events // 当前元素上绑定的自定义事件
+  vm._hasHookEvent // 标示是否有hook:开头的事件
 
   vm.$vnode // 当前自定义组件在父组件中的vnode，等同于vm.$options._parentVnode
   vm._vnode // 当前组件的vnode
