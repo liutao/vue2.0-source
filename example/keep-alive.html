@@ -10,7 +10,7 @@
 	<keep-alive>
 		<!-- <my-component></my-component>
 		<my-component2></my-component2> -->
-		<component :is="which"></component>
+		<component :is="which" :name="name"></component>
 	</keep-alive>
 </div>
 
@@ -27,18 +27,20 @@
 	});
 	Vue.component('my-component2', {
 		template: `<div id="sub" >
-			{{text}}
+			{{text}}{{name}}
 		</div>`,
+		props: ['name'],
 		data(){
 			return {
 				text: '子模板中的内容2'
 			}
 		}
 	});
-	new Vue({
+	var vm = new Vue({
 		el: '#app',
 		data: {
-			which: 'my-component2'
+			which: 'my-component2',
+			name: '刘涛'
 		}
 	});
 </script>
