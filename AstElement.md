@@ -64,7 +64,7 @@ declare type ASTElement = {
     expression: string;
   };
 
-  directives?: Array<ASTDirective>;
+  directives?: Array<ASTDirective>; // 存放普通指令相关信息
 
   forbidden?: true;  // 为true时表示，该标签是style或包含脚本的script
   once?: true; // v-once
