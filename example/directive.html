@@ -7,22 +7,17 @@
 </head>
 <body>
 <div id="app">
-	<p :style="{height: st.height + 'px', width: st.width + 'px', backgroundColor: st.bg}" v-send></p>
+	<p  v-demo:foo.a.b = 'demo_value'></p>
 </div>
 <script type="text/javascript">
 	var vue = new Vue({
 		data: {
-			st: {
-				height: 50,
-				width: 100,
-				bg: 'red'
-			}
+			demo_value: 'test'
 		},
 		directives: {
-			send: {
-				update: (el, binding)=>{
-					debugger;
-					console.log('test', el, binding);
+			demo: {
+				bind: (el, binding)=>{
+					console.log(el, binding);
 				}
 			}
 		}
