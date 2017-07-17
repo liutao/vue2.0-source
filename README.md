@@ -27,20 +27,31 @@ vue 2.2.6源码分析
 
 [vdom——VNode](vdom——VNode.md)
 
+[children的归一化处理](children的归一化处理.md)
+
 [patch——创建dom](patch——创建dom.md)
 
 [patch——diff](patch——diff.md)
 
+[patch——自定义组件的处理流程](patch——自定义组件的处理流程.md)
 
-对各个指令的处理
+[事件处理](事件处理.md)
+
+指令的处理
+
+[directives概述](directives概述.md)
+
+[自定义指令](自定义指令.md)
 
 [v-for](v-for.md)
 
 [v-if](v-if.md)
 
+内置组件和标签
+
 [slot和作用域插槽](slot和作用域插槽.md)
 
-[事件处理](事件处理.md)
+[keep-alive](keep-alive.md)
 
 以下是整理一些比较零散的数据，主要是记录结构中每个数据表示什么意思，会不断完善更新：
 
@@ -49,3 +60,5 @@ vue 2.2.6源码分析
 [Vue实例属性](Vue实例属性.md)
 
 [AstElement](AstElement.md)
+
+[VNode](VNode.md)
