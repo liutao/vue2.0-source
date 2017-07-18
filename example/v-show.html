@@ -7,13 +7,20 @@
 </head>
 <body>
 <div id="app">
-	<p v-show="show">test</p>
+	<div class="el el-if" v-if="bln"><span v-show="false">hidden content</span></div>
+  	<div class="el el-else" v-else><span @click="toggle">visible  content</span></div>
+  	<button @click="toggle">toggle</button>
 </div>
 <script type="text/javascript">
 	var vm = new Vue({
 		el: '#app',
 		data: {
-			show: true
+		    bln: true
+		},
+		methods: {
+		    toggle: function () {
+		      this.bln = !this.bln
+		    }
 		}
 	})
 </script>
