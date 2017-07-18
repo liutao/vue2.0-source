@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+	<pre :name="html" >
+		{{html}}
+		<span>{{html}}</span>
+	</pre>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			html: "html里面的内容"
+		}
+	})
+</script>
+</body>
+</html>

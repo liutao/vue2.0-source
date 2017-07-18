@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+	<style type="text/css">
+		[v-cloak]{display: none;}
+	</style>
+</head>
+<body>
+<div id="app">
+	<p v-cloak>{{html}}</p>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			html: "test"
+		}
+	})
+</script>
+</body>
+</html>
