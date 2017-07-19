@@ -76,22 +76,22 @@ function genOnce (el: ASTElement): string {
 
 例：
 
-```JavaScript
+```html
 <div id="app">
-	<div v-for="item in list">
-		<div v-once>
-	  		<p>{{msg}}{{item}}</p>
-		</div>
-	</div>
+  <div v-for="item in list">
+    <div v-once>
+      <p>{{msg}}{{item}}</p>
+    </div>
+  </div>
 </div>
 <script type="text/javascript">
-	var vm = new Vue({
-		el: '#app',
-		data: {
-			msg: "message",
-			list: [1, 2, 3]
-		}
-	})
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      msg: "message",
+      list: [1, 2, 3]
+    }
+  })
 </script>
 ```
 
