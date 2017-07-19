@@ -6,17 +6,17 @@
 
 ```html
 <div id="app">
-	这里是文本<箭头之后的文本
-	<p>{{message}}</p>
-	<p>静态文本<a href="https://www.imliutao.com">博客地址</a></p>
+  这里是文本<箭头之后的文本
+  <p>{{message}}</p>
+  <p>静态文本<a href="https://www.imliutao.com">博客地址</a></p>
 </div>
 <script type="text/javascript">
-	var vm = new Vue({
-		el: '#app',
-		data: {
-			message: '动态文本'
-		}
-	})
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      message: '动态文本'
+    }
+  })
 </script>
 ```
 
@@ -102,12 +102,12 @@ export function optimize (root: ?ASTElement, options: CompilerOptions) {
 **`isStaticKey`** 我们在[compile概述](compile概述.md)中介绍过，传入的`options.staticKeys`的值为`staticClass,staticStyle`。所以该函数返回`true`的有下面`genStaticKeys`中定义的属性加上`staticClass,staticStyle`。
 
 ```JavaScript
-	function genStaticKeys (keys: string): Function {
-	  return makeMap(
-	    'type,tag,attrsList,attrsMap,plain,parent,children,attrs' +
-	    (keys ? ',' + keys : '')
-	  )
-	}
+function genStaticKeys (keys: string): Function {
+  return makeMap(
+    'type,tag,attrsList,attrsMap,plain,parent,children,attrs' +
+    (keys ? ',' + keys : '')
+  )
+}
 ```
 
 **`isPlatformReservedTag`** 这里所有的`HTML`和`SVG`标签都会返回`true`，具体定义在`src/platforms/web/util/element.js`中。
@@ -184,7 +184,7 @@ function isStatic (node: ASTNode): boolean {
 
 最后是两个**"或"**的判断逻辑。
 
-1、 如果`node.pre`返回`true`，即`node.tag = 'pre'`或有`v-pre`指令，这时结点的子内容是不做编译的，所以函数返回`true`。
+1、 如果`node.pre`返回`true`，即元素上有`v-pre`指令，这时结点的子内容是不做编译的，所以函数返回`true`。
 
 2、 第二个判断比较复杂，我们一个一个说。
 
@@ -192,7 +192,7 @@ function isStatic (node: ASTNode): boolean {
 
 `!node.if`：没有`v-if`和`v-else`。
 
-`!node.if`：没有`v-for`。
+`!node.for`：没有`v-for`。
 
 `!isBuiltInTag(node.tag)`：不是内置的标签，内置的标签有`slot`和`component`。
 
@@ -257,24 +257,24 @@ element1 = {
       attrsList: [],
       attrsMap: {},
       children: [{
-					text: "静态文本",
-					type: 3,
-					static: true
-	      },
-	      {
-			    attrs: [{name: "href", value: '"http://www.imliutao.com"'}],
-					attrsList: [{name: "href", value: 'http://www.imliutao.com'}],
-					attrsMap: {href: 'http://www.imliutao.com'}
-					children: [{
-						text: "博客地址",
-						type: 3,
-						static: true
-					}],
-					plain: false,
-					tag: "a",
-					type: 1,
-					static: true
-			  }
+          text: "静态文本",
+          type: 3,
+          static: true
+        },
+        {
+          attrs: [{name: "href", value: '"http://www.imliutao.com"'}],
+          attrsList: [{name: "href", value: 'http://www.imliutao.com'}],
+          attrsMap: {href: 'http://www.imliutao.com'}
+          children: [{
+            text: "博客地址",
+            type: 3,
+            static: true
+          }],
+          plain: false,
+          tag: "a",
+          type: 1,
+          static: true
+        }
       ],
       plain: true,
       static: true
@@ -376,24 +376,24 @@ element1 = {
       attrsList: [],
       attrsMap: {},
       children: [{
-					text: "静态文本",
-					type: 3,
-					static: true
-	      },
-	      {
-			    attrs: [{name: "href", value: '"http://www.imliutao.com"'}],
-					attrsList: [{name: "href", value: 'http://www.imliutao.com'}],
-					attrsMap: {href: 'http://www.imliutao.com'}
-					children: [{
-						text: "博客地址",
-						type: 3,
-						static: true
-					}],
-					plain: false,
-					tag: "a",
-					type: 1,
-					static: true
-			  }
+          text: "静态文本",
+          type: 3,
+          static: true
+        },
+        {
+          attrs: [{name: "href", value: '"http://www.imliutao.com"'}],
+          attrsList: [{name: "href", value: 'http://www.imliutao.com'}],
+          attrsMap: {href: 'http://www.imliutao.com'}
+          children: [{
+            text: "博客地址",
+            type: 3,
+            static: true
+          }],
+          plain: false,
+          tag: "a",
+          type: 1,
+          static: true
+        }
       ],
       plain: true,
       static: true,

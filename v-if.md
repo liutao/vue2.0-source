@@ -1,8 +1,4 @@
-本篇文章，我们要讲解的是`v-if`指令从解析到生成`render`函数的过程。
-
-同样假定你已经阅读了[compile——生成ast](compile——生成ast.md)和[compile——生成render字符串](compile——生成render字符串.md)这两篇文章，知道了`html`模板处理的基本流程。
-
-例子如下：
+本篇文章，我们要讲解的是`v-if`指令的解析过程，同样我们还是从一个例子入手：
 
 ```HTML
 <div id="app">
@@ -73,16 +69,16 @@ function addIfCondition (el, condition) {
 接着往下执行，会走到如下判断条件：
 
 ```JavaScript
-  if (currentParent && !element.forbidden) {
-	if (element.elseif || element.else) {
-      processIfConditions(element, currentParent)
-    } else if (element.slotScope) { // scoped slot
-      ...
-    } else {
-      currentParent.children.push(element)
-      element.parent = currentParent
-    }
+if (currentParent && !element.forbidden) {
+  if (element.elseif || element.else) {
+    processIfConditions(element, currentParent)
+  } else if (element.slotScope) { // scoped slot
+    ...
+  } else {
+    currentParent.children.push(element)
+    element.parent = currentParent
   }
+}
 ```
 
 如果当前标签是`elseif`或`else`，如果我们自己实现，首先想到的是从当前元素往前，找到第一个有`v-if`的标签。`Vue`中其实也是这样：
@@ -222,7 +218,9 @@ function genIfConditions (conditions: ASTIfConditions): string {
 
 如果`conditions.length`为0，则返回`_e()`，该方法对应的是`createEmptyVNode`。
 
-否则取出`conditions`中第一个元素，判断`condition.exp`，如果有，则返回一个三目运算符。否则说明是`v-else`，则直接返回`genTernaryExp(condition.block)`。
+否则取出`conditions`中第一个元素，如果`condition.exp`不为空，则进入`if`块，此时返回的是一个三目运算符，如果表达式为真，则返回`genTernaryExp(condition.block)`的返回值，否则再次调用`genIfConditions(conditions)`。如果`condition.exp`为空，则直接返回`genTernaryExp(condition.block)`。
+
+`genTernaryExp`会判断`el.once`即当前元素上是否有`v-once`指令，如果有，则返回`getOnce(el)`，否则返回`genElement(el)`。
 
 最终生成的`render`函数字符串如下：
 
@@ -241,14 +239,14 @@ with(this){return _c('div',{attrs:{"id":"app"}},[(value == 1)?_c('p',[_v("v-if�
 ```HTML
 <div id="app"></div>
 <script type="text/javascript">
-	new Vue({
-		template: '<p v-if="value == 1">v-if块的内容</p>\
-			<p v-else-if="value == 2">v-else-if块的内容</p>\
-			<p v-else>v-else块的内容</p>',
-		data: {
-			value: 3
-		}
-	}).$mount('#app');
+  new Vue({
+    template: '<p v-if="value == 1">v-if块的内容</p>\
+	<p v-else-if="value == 2">v-else-if块的内容</p>\
+	<p v-else>v-else块的内容</p>',
+    data: {
+      value: 3
+    }
+  }).$mount('#app');
 </script>
 ```
 

@@ -1,27 +1,25 @@
-本篇文章，我们主要讲解`v-for`指令的解析到生成`render`函数。假定你已经阅读了[compile——生成ast](compile——生成ast.md)和[compile——生成render字符串](compile——生成render字符串.md)这两篇文章，知道了`html`模板处理的基本流程。
-
-这里我们同样还是从例子入手：
+本篇文章，我们主要讲解`v-for`指令的处理流程。`v-for`是我们最常用的指令之一，我们从一个例子入手，详细的看一下`Vue`中对它的处理流程。
 
 ```HTML
 <div id="app">
-	<p v-for="(value, key, index) in object">{{ index }}. {{ key }} : {{ value }}</p>
+  <p v-for="(value, key, index) in object">{{ index }}. {{ key }} : {{ value }}</p>
 </div>
 <script type="text/javascript">
-	var vm = new Vue({
-		el: '#app',
-		data: {
-			object: {
-				height: '178cm',
-				weight: '80kg',
-				gender: 'male',
-				address: 'BeiJing'
-			}
-		}
-	})
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      object: {
+        height: '178cm',
+        weight: '80kg',
+        gender: 'male',
+        address: 'BeiJing'
+      }
+    }
+  })
 </script>
 ```
 
-这次我们直接看`src/compiler/parse/index.js`文件，在`start`函数中，对于`v-for`指令，我们调用了`processFor`方法，这里我们会对`v-for`指令进行解析：
+还是从`src/compiler/parse/index.js`文件入手，在`start`函数中，对于`v-for`指令，我们通过`processFor`方法来进行解析：
 
 ```JavaScript
 function processFor (el) {
@@ -88,23 +86,23 @@ el.iterator2 = index
 
 ```JavaScript
 {
-	alias: "value",
-	attrsList: [],
-	attrsMap: {v-for: "(value, key, index) in object"},
-	children: [{
-		expression: "_s(index)+". "+_s(key)+" : "+_s(value)",
-		text: "{{ index }}. {{ key }} : {{ value }}",
-		type: 2,
-		static: false
-	}],
-	for: "object",
-	iterator1: "key",
-	iterator2: "index",
-	plain: true,
-	tag: "p",
-	type: 1,
-	static: false,
-	staticRoot: false
+  alias: "value",
+  attrsList: [],
+  attrsMap: {v-for: "(value, key, index) in object"},
+  children: [{
+    expression: "_s(index)+". "+_s(key)+" : "+_s(value)",
+    text: "{{ index }}. {{ key }} : {{ value }}",
+    type: 2,
+    static: false
+  }],
+  for: "object",
+  iterator1: "key",
+  iterator2: "index",
+  plain: true,
+  tag: "p",
+  type: 1,
+  static: false,
+  staticRoot: false
 }
 ```
 
