@@ -47,6 +47,12 @@ vue 2.2.6源码分析
 
 [v-if](v-if.md)
 
+[v-once](v-once.md)
+
+[v-show](v-show.md)
+
+[v-text、v-html、v-cloak、v-pre](v-text、v-html、v-cloak、v-pre.md)
+
 内置组件和标签
 
 [slot和作用域插槽](slot和作用域插槽.md)
