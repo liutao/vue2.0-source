@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="../../vue/dist/vue.js"></script>
+</head>
+<body>
+<!-- v-for的值不能作为v-model的值 -->
+<!-- <div id="app">
+	<p v-for="item in value">
+		<input v-model="item"/>
+	</p>
+</div> -->
+
+<!-- select -->
+<div id="app">
+	<select v-model="value">
+		<option>1</option>
+		<option>2</option>
+		<option>3</option>
+	</select>
+	<p>{{value}}</p>
+</div>
+<script type="text/javascript">
+	// var vm = new Vue({
+	// 	el: '#app',
+	// 	data: {
+	// 		value: ['test','test1']
+	// 	}
+	// }).$mount('#app');
+
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			value: 3
+		}
+	}).$mount('#app');
+</script>
+
+</body>
+</html>
