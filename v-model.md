@@ -298,3 +298,135 @@ function hasNoMatchingOption (value, options) {
 ```
 
 `hasNoMatchingOption`是判断`value`的值中，是否都有`option`与之对应，如果是`needReset`返回`false`，否则返回`true`。如果有不匹配的，则触发一次元素的`change`事件，来更新数据和模板。
+
+### `checkbox`
+
+同样看一个例子：
+
+```html
+<div id="app">
+  <input type="checkbox" v-model="value" true-value="1" false-value="0" />
+  <p>{{value}}</p>
+</div>
+<script>
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      value: 1
+    }
+  }).$mount('#app');
+</script>
+
+```
+
+`checkbox`比较特殊，它有两种状态，一个真一个假。我们可以通过`true-value`和`false-value`分别设置复选框选中时和未选中时的`value`值。如上面的例子中，选中时`value`为1，未选中时为0。`true-value`的默认值是"true"，同理`false-value`的默认值是"false"。如果我们没有设置，当我们改变复选框状态时，`value`的值就会是"true"或"false"。当然这只是基本的一种情况，`value`如果是一个数组，处理方式就会又有所不同。
+
+它是由`genCheckboxModel`进行处理的。
+
+```JavaScript
+function genCheckboxModel (
+  el: ASTElement,
+  value: string,
+  modifiers: ?ASTModifiers
+) {
+  const number = modifiers && modifiers.number
+  const valueBinding = getBindingAttr(el, 'value') || 'null'
+  const trueValueBinding = getBindingAttr(el, 'true-value') || 'true'
+  const falseValueBinding = getBindingAttr(el, 'false-value') || 'false'
+  addProp(el, 'checked',
+    `Array.isArray(${value})` +
+      `?_i(${value},${valueBinding})>-1` + (
+        trueValueBinding === 'true'
+          ? `:(${value})`
+          : `:_q(${value},${trueValueBinding})`
+      )
+  )
+  addHandler(el, CHECKBOX_RADIO_TOKEN,
+    `var $$a=${value},` +
+        '$$el=$event.target,' +
+        `$$c=$$el.checked?(${trueValueBinding}):(${falseValueBinding});` +
+    'if(Array.isArray($$a)){' +
+      `var $$v=${number ? '_n(' + valueBinding + ')' : valueBinding},` +
+          '$$i=_i($$a,$$v);' +
+      `if($$c){$$i<0&&(${value}=$$a.concat($$v))}` +
+      `else{$$i>-1&&(${value}=$$a.slice(0,$$i).concat($$a.slice($$i+1)))}` +
+    `}else{${value}=$$c}`,
+    null, true
+  )
+}
+```
+
+从上面的代码中，我们看到除了`true-value`和`false-value`，我们还可以传一个`value`属性，它的默认值是`null`。它的作用我们稍后再说。
+
+因为我们设置复选框是否选中，是通过`checked`属性来控制的。如果我们的`value`绑定的数据是一个数组，则判断我们设置的"value"属性值是否在数组中，如果在则返回`true`，不在则返回`false`。如果`value`绑定的数据不是一个数组，则判断`trueValueBinding === 'true'`，如果返回真，则直接返回`value`绑定的值，否则判断`value`和`trueValueBinding`绑定的值是否相等。以上都是在模板第一次初始化时的处理。
+
+同样，为了做的数据的双向绑定，我们需要给元素添加事件回调。这里添加的事件时`CHECKBOX_RADIO_TOKEN`，在[事件绑定](事件绑定.md)的讲解中，我们提到在`addEventListener`之前，需要对`on`中的事件进行处理：
+
+```JavaScript
+function normalizeEvents (on) {
+  let event
+  /* istanbul ignore if */
+  if (on[RANGE_TOKEN]) {
+    // IE input[type=range] only supports `change` event
+    event = isIE ? 'change' : 'input'
+    on[event] = [].concat(on[RANGE_TOKEN], on[event] || [])
+    delete on[RANGE_TOKEN]
+  }
+  if (on[CHECKBOX_RADIO_TOKEN]) {
+    // Chrome fires microtasks in between click/change, leads to #4521
+    event = isChrome ? 'click' : 'change'
+    on[event] = [].concat(on[CHECKBOX_RADIO_TOKEN], on[event] || [])
+    delete on[CHECKBOX_RADIO_TOKEN]
+  }
+}
+```
+
+这里其实就是主要对`CHECKBOX_RADIO_TOKEN`和`RANGE_TOKEN`的处理。根据不同的浏览器，绑定不同的事件。
+
+我们`checkbox`事件的处理就是下面的一大段字符串，我们把它整理成可读的`JavaScript`代码：
+
+```JavaScript
+var $$a=${value},
+  $$el=$event.target,
+  $$c=$$el.checked?(${trueValueBinding}):(${falseValueBinding});
+if(Array.isArray($$a)){
+  var $$v=${number ? '_n(' + valueBinding + ')' : valueBinding},
+    $$i=_i($$a,$$v);
+  if($$c){
+    $$i<0&&(${value}=$$a.concat($$v))
+  } else {
+    $$i>-1&&(${value}=$$a.slice(0,$$i).concat($$a.slice($$i+1)))
+  }
+} else {
+  ${value}=$$c
+}
+```
+
+赋值什么的就不多说了，
+
+1、如果`value`绑定的值是数组
+
+根据复选框的选中状态来获取`trueValueBinding`或`falseValueBinding`的值并添加到`$$c`上。如果`$$c`返回真且`valueBinding`的值不在`value`绑定的数组中，则把`valueBingding`的值添加到数组的最后。如果`$$c`返回假且`valueBinding`的值在`value`绑定的数组中，则从数组中删除该值。
+
+2、如果`value`绑定的值不是数组
+
+直接把`$$c`的值赋值给数组
+
+`value`不是数组的情况，我们上面的例子已经满足，我们在给一个`value`是数组的例子：
+
+```html
+<div id="app">
+ 	<input type="checkbox" v-model.number="trueVal" value="3" />
+ 	<p>{{trueVal}}</p>
+</div>
+<script>
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      trueVal: [1,2]
+    }
+  }).$mount('#app');
+</script>
+```
+
+该例子运行，我们可以看到因为`trueVal`的值不包括3，所以初始情况复选框是没有被选中的。我们改变复选框的选中状态，发现选中时`trueVal`的值为`[1,2,3]`，未选中时值为`[1,2]`。

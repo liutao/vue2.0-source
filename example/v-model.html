@@ -14,13 +14,26 @@
 </div> -->
 
 <!-- select -->
-<div id="app">
-	<select v-model="value">
+<!-- <div id="app">
+	<select v-model="value" multiple="multiple">
 		<option>1</option>
 		<option>2</option>
 		<option>3</option>
 	</select>
 	<p>{{value}}</p>
+</div>
+ -->
+
+ <!--checkbox-->
+ <!-- <div id="app">
+ 	<input type="checkbox" v-model.number="value" />
+ 	<p>{{value}}</p>
+ </div> -->
+
+<!--checkbox-->
+<div id="app">
+ 	<input type="checkbox" v-model.number="trueVal" value="1" />
+ 	<p>{{trueVal}}</p>
 </div>
 <script type="text/javascript">
 	// var vm = new Vue({
@@ -30,12 +43,21 @@
 	// 	}
 	// }).$mount('#app');
 
+	// var vm = new Vue({
+	// 	el: '#app',
+	// 	data: {
+	// 		value: [1,2]
+	// 	}
+	// }).$mount('#app');
+
 	var vm = new Vue({
 		el: '#app',
 		data: {
-			value: 3
+			value: 1,
+			trueVal: [1,2]
 		}
 	}).$mount('#app');
+	
 </script>
 
 </body>
