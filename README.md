@@ -53,6 +53,8 @@ vue 2.2.6源码分析
 
 [v-text、v-html、v-cloak、v-pre](v-text、v-html、v-cloak、v-pre.md)
 
+[v-model](v-model.md)
+
 内置组件和标签
 
 [slot和作用域插槽](slot和作用域插槽.md)
