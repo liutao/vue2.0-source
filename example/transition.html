@@ -23,9 +23,12 @@
 <div id="app">
 	<span @click="btn">toggle</span>
 	<transition name="fade" appear appear-class="fade-appear" appear-active-class="fade-appear-active">
-		<my-component v-show="show"></my-component>
-		<!-- <my-component2></my-component2>
-		<component :is="which"></component> -->
+		<!-- <transition> -->
+		<!-- <keep-alive> -->
+			<p v-show="show">gagag</p>
+			<!-- <my-component v-show="show"></my-component> -->
+		<!-- </keep-alive> -->
+		<!-- </transition> -->
 	</transition>
 </div>
 
