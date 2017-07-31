@@ -4,15 +4,15 @@
 
 ```HTML
 <div id="app">
-	<p>{{message}}</p>
+  <p>{{message}}</p>
 </div>
 <script type="text/javascript">
-	var vm = new Vue({
-		el: '#app',
-		data: {
-			message: '第一个vue实例'
-		}
-	})
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      message: '第一个vue实例'
+    }
+  })
 </script>
 ```
 创建对象，当然要从构造函数看起，构造函数在`src/core/instance/index.js`中。
@@ -85,11 +85,12 @@ function Vue (options) {
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }
+ }
 ```
 
 首先一进来，我们给当前`vm`添加了一个唯一的`_uid`，然后`vm._isVue`设为`true`（监听对象变化时用于过滤vm）。
 
-因为我们自己传入的参数中，理论上不会有`_isComponent`。所以我们的小栗子就直接走到了`else`里面。`mergeOptions`用于合并两个对象，不同于`Object.assign`的简单合并，它还对数据还进行了一系列的操作，且源码中多处用到该方法，所以后面会详细讲解这个方法。在这之前，我们先看看`resolveConstructorOptions`都做了什么。
+`_isComponent`是内部创建子组件时才会添加为`true`的属性，我们的小栗子会直接走到了`else`里面。`mergeOptions`用于合并两个对象，不同于`Object.assign`的简单合并，它还对数据还进行了一系列的操作，且源码中多处用到该方法，所以后面会详细讲解这个方法。`resolveConstructorOptions`方法在[Vue.extend](Vue.extend.md)中做了详细的解释，它的作用是合并构造器及构造器父级上定义的`options`。
 
 ```JavaScript
 export function resolveConstructorOptions (Ctor: Class<Component>) {
@@ -122,34 +123,34 @@ export function resolveConstructorOptions (Ctor: Class<Component>) {
 这里的`Ctor`就是`vm.constructor`也就是`Vue`对象，在上一篇文章中，其实我们提到过，在`/src/core/global-api/index`文件中，我们给`Vue`添加了一些全局的属性或方法。
 
 ```JavaScript
-  Vue.options = Object.create(null)
-  // Vue.options.components、Vue.options.directives、Vue.options.filters
-  config._assetTypes.forEach(type => {
-    Vue.options[type + 's'] = Object.create(null)
-  })
+Vue.options = Object.create(null)
+// Vue.options.components、Vue.options.directives、Vue.options.filters
+config._assetTypes.forEach(type => {
+  Vue.options[type + 's'] = Object.create(null)
+})
 
-  // Vue.options._base
-  Vue.options._base = Vue
+// Vue.options._base
+Vue.options._base = Vue
 
-  // Vue.options.components.KeepAlive
-  extend(Vue.options.components, builtInComponents)
+// Vue.options.components.KeepAlive
+extend(Vue.options.components, builtInComponents)
 ```
 
 所以，这里打印一下`Ctor.options`，如下所示：
 
 ```JavaScript
 Ctor.options = {
-	components: {
-		KeepAlive,
-		Transition,
-		TransitionGroup
-	},
-	directives: {
-		model,
-		show
-	},
-	filters: {},
-	_base: Vue
+  components: {
+    KeepAlive,
+    Transition,
+    TransitionGroup
+  },
+  directives: {
+    model,
+    show
+  },
+  filters: {},
+  _base: Vue
 }
 ```
 
@@ -157,7 +158,7 @@ Ctor.options = {
 
 ## `mergeOptions`
 
-本来打算在此处详细讲解一下`mergeOptions`，但写着写着发现内容太多。有点偏离主题，所以这里还是基于前面的例子，简单说一下，另起一篇文章详细讲解`Vue`的合并策略。
+`mergeOptions`是`Vue`中处理属性的合并策略的地方。
 
 ```JavaScript
 export function mergeOptions (
@@ -296,19 +297,19 @@ strats.data = function (
 
 ```JavaScript
 vm.$option = {
-	components: {
-		KeepAlive,
-		Transition,
-		TransitionGroup
-	},
-	directives: {
-		model,
-		show
-	},
-	filters: {},
-	_base: Vue,
-	el: '#app',
-	data: function mergedInstanceDataFn(){}
+  components: {
+    KeepAlive,
+    Transition,
+    TransitionGroup
+  },
+  directives: {
+    model,
+    show
+  },
+  filters: {},
+  _base: Vue,
+  el: '#app',
+  data: function mergedInstanceDataFn(){}
 }
 ```
 
@@ -345,7 +346,7 @@ export function initLifecycle (vm: Component) {
   vm._isBeingDestroyed = false
 }
 ```
-该方法比较简单，主要就是给`vm`对象添加了`$parent`、`$root`、`$children`属性，以及一些其它的声明周期相关的标识。
+该方法比较简单，主要就是给`vm`对象添加了`$parent`、`$root`、`$children`属性，以及一些其它的生命周期相关的标识。
 
 `options.abstract`用于判断是否是抽象组件，组件的父子关系建立会跳过抽象组件，抽象组件比如`keep-alive`、`transition`等。所有的子组件`$root`都指向顶级组件。
 
@@ -362,7 +363,7 @@ export function initEvents (vm: Component) {
   }
 }
 ```
-该方法给`vm`添加了一些事件相关的属性，我们本例中没有添加事件，暂时跳过。
+该方法初始化事件相关的属性，_parentListeners`是父组件中绑定在自定义标签上的事件，供子组件处理。`
 
 ## `initRender(vm)`
 
@@ -478,7 +479,7 @@ export function initState (vm: Component) {
   if (opts.watch) initWatch(vm, opts.watch)
 }
 ```
-这里主要就是操作数据了，`props`、`methods`、`data`、`computed`、`watch`，从这里开始就涉及到了`Observer`、`Dep`和`Watcher`，网上讲解双向绑定的文章很多，之后我也会单独去讲解这一块。而且，这里对数据操作也比较多，在讲完双向绑定的内容后，我们再结合没讲完的`mergeOptions`详细看看`Vue`对我们传入的数据都进行了什么操作。
+这里主要就是操作数据了，`props`、`methods`、`data`、`computed`、`watch`，从这里开始就涉及到了`Observer`、`Dep`和`Watcher`，网上讲解双向绑定的文章很多，之后我也会单独去讲解这一块。而且，这里对数据操作也比较多，在讲完双向绑定的内容后，有时间我们再来说一说`Vue`对我们传入的数据都进行了什么操作。
 
 到这一步，我们看看我们的`vm`对象变成了什么样：
 
@@ -644,13 +645,9 @@ export function createCompiler (baseOptions: CompilerOptions) {
     template: string,
     options?: CompilerOptions
   ): CompiledResult {
-
   	...
-
     const compiled = baseCompile(template, finalOptions)
-    
     ...
-
     return compiled
   }
 
@@ -660,14 +657,10 @@ export function createCompiler (baseOptions: CompilerOptions) {
     vm?: Component
   ): CompiledFunctionResult {
     options = options || {}
-
     ...
-
     // compile
     const compiled = compile(template, options)
-
     ...
-
     return (functionCompileCache[key] = res)
   }
 
@@ -684,58 +677,58 @@ export function createCompiler (baseOptions: CompilerOptions) {
 
 ```JavaScript
 {
-	type: 1,
-	tag: 'div',
-	plain: false,
-	parent: undefined,
-	attrs: [{name:'id', value: '"app"'}],
-	attrsList: [{name:'id', value: 'app'}],
-	attrsMap: {id: 'app'},
-	children: [{
-		type: 1,
-		tag: 'p',
-		plain: true,
-		parent: ast,
-		attrs: [],
-		attrsList: [],
-		attrsMap: {},
-		children: [{
-			expression: "_s(message)",
-			text: "{{message}}",
-			type: 2
-	}]
+  type: 1,
+  tag: 'div',
+  plain: false,
+  parent: undefined,
+  attrs: [{name:'id', value: '"app"'}],
+  attrsList: [{name:'id', value: 'app'}],
+  attrsMap: {id: 'app'},
+  children: [{
+    type: 1,
+    tag: 'p',
+    plain: true,
+    parent: ast,
+    attrs: [],
+    attrsList: [],
+    attrsMap: {},
+    children: [{
+      expression: "_s(message)",
+      text: "{{message}}",
+      type: 2
+    }]
 }
 ```
 第二步，`optimize(ast, options)`主要是对ast进行优化，分析出静态不变的内容部分，增加了部分属性：
 
 ```JavaScript
 {
-	type: 1,
-	tag: 'div',
-	plain: false,
-	parent: undefined,
-	attrs: [{name:'id', value: '"app"'}],
-	attrsList: [{name:'id', value: 'app'}],
-	attrsMap: {id: 'app'},
-	static: false,
-	staticRoot: false,
-	children: [{
-		type: 1,
-		tag: 'p',
-		plain: true,
-		parent: ast,
-		attrs: [],
-		attrsList: [],
-		attrsMap: {},
-		static: false,
-		staticRoot: false,
-		children: [{
-			expression: "_s(message)",
-			text: "{{message}}",
-			type: 2,
-			static: false
-	}]
-}
+  type: 1,
+  tag: 'div',
+  plain: false,
+  parent: undefined,
+  attrs: [{name:'id', value: '"app"'}],
+  attrsList: [{name:'id', value: 'app'}],
+  attrsMap: {id: 'app'},
+  static: false,
+  staticRoot: false,
+  children: [{
+    type: 1,
+    tag: 'p',
+    plain: true,
+    parent: ast,
+    attrs: [],
+    attrsList: [],
+    attrsMap: {},
+    static: false,
+    staticRoot: false,
+    children: [{
+      expression: "_s(message)",
+      text: "{{message}}",
+      type: 2,
+      static: false
+    }]
+  }
 ```
 因为我们这里只有一个动态的`{{message}}`，所以`static`和`staticRoot`都是`false`。
 

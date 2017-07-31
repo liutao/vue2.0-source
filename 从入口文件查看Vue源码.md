@@ -35,7 +35,6 @@ if (process.env.TARGET) {
   exports.getBuild = name => genConfig(builds[name])
   exports.getAllBuilds = () => Object.keys(builds).map(name => genConfig(builds[name]))
 }
-
 ```
 
 直接看下面，我们看到它调用了`getConfig(builds[process.env.TARGET])`，`getConfig`用于生成`rollup`的配置文件。`builds`是一个对象，获取它的`process.env.TARGET`值，在`package.json`中，我们看到`dev`中有`TARGET:web-full-dev`参数，即上面我留下的那一段配置。这样入口文件我们就找到了，也就是`/src/entries/web-runtime-with-compiler.js`。
@@ -52,11 +51,13 @@ import Vue from './web-runtime'
 
 打开`web-runtime`，看第一行代码我们就知道，该文件同理是在'core/index'导出的`Vue`对象上进行了加工。
 
-再次打开`core/index`，发现它又是在'./instance/index'上进行加工的。这也是为什么打包后的文件内，最终返回的是`Vue$3`。整个过程是这样的：
+再次打开`core/index`，发现它又是在`./instance/index`上进行加工的。这也是为什么打包后的文件内，最终返回的是`Vue$3`。整个过程是这样的：
 
 ```JavaScript
-/src/entries/web-runtime-with-compiler.js    -->    /src/entries/web-runtime.js    --> 
-   /src/core/index.js    -->    /src/core/instance/index.js
+/src/entries/web-runtime-with-compiler.js   
+--> /src/entries/web-runtime.js    
+--> /src/core/index.js    
+--> /src/core/instance/index.js
 ```
 
 历经千辛万苦，终于找到了定义`Vue`对象的所在之处。它的构造函数及其简单：
@@ -73,7 +74,7 @@ function Vue (options) {
 
 首先判断如果是生产环境，且不是通过`new`关键字来创建对象的话，就在控制台打印一个`warning`，之后调用了`this._init(options)`函数。
 
-下面的几个函数，分别在`Vue.prototype`原型上绑定了一些实例方法。关于`Vue`的[静态方法](https://github.com/liutaofe/vue2.0-source/issues/3)和[实例方法](https://github.com/liutaofe/vue2.0-source/issues/4)，我分别单列出来，这样看起来可以更加清晰。
+下面的几个函数，分别在`Vue.prototype`原型上绑定了一些实例方法。关于`Vue`的[静态方法](Vue-globals.md)和[实例方法](Vue实例属性.md)，我分别单列出来，这样看起来可以更加清晰。
 
 ```JavaScript
 // _init
@@ -155,7 +156,7 @@ export function initGlobalAPI (Vue: GlobalAPI) {
 }
 ```
 
-从上面的代码可以看出，它是给`Vue`对象添加了一些静态方法和属性。我们之后在[`Vue`的静态方法](https://github.com/liutaofe/vue2.0-source/issues/3)中详细分析。
+从上面的代码可以看出，它是给`Vue`对象添加了一些静态方法和属性。
 
 `/src/core/index.js`文件中，还添加了一个`Vue.prototype[$isServer]`属性，用于判断是不是服务端渲染，还有一个就是`Vue.version`。
 

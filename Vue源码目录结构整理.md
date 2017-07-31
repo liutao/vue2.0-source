@@ -16,11 +16,11 @@ Vue
 
         |— compiler 模板解析的相关文件
 
-          |—codegen 根据ast生成render函数
+            |—codegen 根据ast生成render函数
 
-          |—directives 通用生成render函数之前需要处理的指令
+            |—directives 通用生成render函数之前需要处理的指令
 
-          |—parser 模板解析
+            |—parser 模板解析
 
         |—  core 核心代码
 
@@ -42,15 +42,15 @@ Vue
 
             |— web web端独有文件
 
-            	|— compiler 编译阶段需要处理的指令和模块
+                |— compiler 编译阶段需要处理的指令和模块
 
-            	|— runtime 运行阶段需要处理的组件、指令和模块
+                |— runtime 运行阶段需要处理的组件、指令和模块
 
-            	|— server 服务端渲染相关
+                |— server 服务端渲染相关
 
-            	|— util 工具库
+                |— util 工具库
 
-            |— week week端独有文件
+            |— weex weex端独有文件
 
         |— server 服务端渲染相关
 
