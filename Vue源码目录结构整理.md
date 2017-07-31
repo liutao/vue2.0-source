@@ -2,42 +2,60 @@ vue源码根目录下有很多文件夹，下面先列出我知道的几个，�
 
 Vue
 
-&nbsp;&nbsp;&nbsp;&nbsp;|--  build  打包相关的配置文件，其中最重要的是config.js。主要是根据不同的入口，打包为不同的文件。
+    |—  build  打包相关的配置文件，其中最重要的是config.js。主要是根据不同的入口，打包为不同的文件。
 
-&nbsp;&nbsp;&nbsp;&nbsp;|--  dist 打包之后文件所在位置
+    |—  dist 打包之后文件所在位置
 
-&nbsp;&nbsp;&nbsp;&nbsp;|--  examples 部分示例
+    |—  examples 部分示例
 
-&nbsp;&nbsp;&nbsp;&nbsp;|--  flow 因为Vue使用了[Flow](https://flow.org/)来进行静态类型检查，这里定义了声明了一些静态类型
+    |—  flow 因为Vue使用了[Flow](https://flow.org/)来进行静态类型检查，这里定义了声明了一些静态类型
 
-&nbsp;&nbsp;&nbsp;&nbsp;|--  packages vue还可以分别生成其它的npm包
+    |—  packages vue还可以分别生成其它的npm包
 
-&nbsp;&nbsp;&nbsp;&nbsp;|--  src 主要源码所在位置
+    |—  src 主要源码所在位置
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- compiler 模板辨析解析的相关文件
+        |— compiler 模板解析的相关文件
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- core 核心代码
+​	    |—codegen 根据ast生成render函数
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- components 全局的组件，这里只有keep-alive
+​	    |—directives 通用生成render函数之前需要处理的指令
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- global-api 全局方法，也就是添加在Vue对象上的方法，比如Vue.use,Vue.extend,,Vue.mixin等
+​	    |—parser 模板解析
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- instance 实例相关内容，包括实例方法，生命周期，事件等
+        |—  core 核心代码
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- observer 双向数据绑定相关文件
+            |— components 全局的组件，这里只有keep-alive
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- util 工具方法
+            |— global-api 全局方法，也就是添加在Vue对象上的方法，比如Vue.use,Vue.extend,,Vue.mixin等
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- vdom 虚拟dom相关
+            |— instance 实例相关内容，包括实例方法，生命周期，事件等
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- entries 入口文件，也就是build文件夹下config.js中配置的入口文件。看源码可以从这里看起
+            |— observer 双向数据绑定相关文件
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- platforms 平台相关的内容，分为web和weex
+            |— util 工具方法
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- server 服务端渲染相关
+            |— vdom 虚拟dom相关
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- sfc 暂时未知
+        |— entries 入口文件，也就是build文件夹下config.js中配置的入口文件。看源码可以从这里看起
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|-- shared 共享的工具方法
+        |— platforms 平台相关的内容
 
-&nbsp;&nbsp;&nbsp;&nbsp;|-- test 测试用例
+            |— web web端独有文件
+
+            	|— compiler 编译阶段需要处理的指令和模块
+
+            	|— runtime 运行阶段需要处理的组件、指令和模块
+
+            	|— server 服务端渲染相关
+
+            	|— util 工具库
+
+​	    |— week week端独有文件
+
+        |— server 服务端渲染相关
+
+        |— sfc 暂时未知
+
+        |—  shared 共享的工具方法
+
+    |—  test 测试用例
