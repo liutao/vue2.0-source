@@ -16,11 +16,11 @@ Vue
 
         |— compiler 模板解析的相关文件
 
-​	    |—codegen 根据ast生成render函数
+          |—codegen 根据ast生成render函数
 
-​	    |—directives 通用生成render函数之前需要处理的指令
+          |—directives 通用生成render函数之前需要处理的指令
 
-​	    |—parser 模板解析
+          |—parser 模板解析
 
         |—  core 核心代码
 
@@ -50,7 +50,7 @@ Vue
 
             	|— util 工具库
 
-​	    |— week week端独有文件
+            |— week week端独有文件
 
         |— server 服务端渲染相关
 
