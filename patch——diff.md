@@ -478,7 +478,7 @@ if (oldStartIdx > oldEndIdx) {
 
 ### 有`key`值的情况
 
-假设`oldCh`上有四个元素`a`、`div[k=1]`、`footer[k=3]`、`span[k=2]`，`newCh`有四个元素`p[k=1]`、`span[key=2]`、`div`、`footer[key=3]`。初始情况下，页面中`dom`顺序为`a、div[k=1]、p、footer[k=3]、span[k=2]`。
+假设`oldCh`上有五个元素`a`、`div[key=1]`、`footer[key=3]`、`span[key=2]`、`p`，`newCh`有六个元素`p[key=3]`、`span[key=2]`、`p`、`div[key=1]`、`a`、`span`。初始情况下，页面中`dom`顺序为`a、div[key=1]、footer[key=3]、span[key=2]、p`。
 
 第一次`while`循环，头尾都不可复用，所以会走到第七种情况，此时会生成`oldKeyToIdx`，如下：
 
@@ -490,16 +490,22 @@ oldKeyToIdx = {
 }
 ```
 
-`newStartVnode`元素`p[key=1]`根据`key`值比较，`elmToMove`会指向`div[k=1]`，但因为它们标签名不一样，所以`sameVNode`判断会返回`false`。所以直接插入到`a`前面，页面中`dom`变为`p[key=1]、a、div[k=1]、footer[k=3]、span[k=2]`，`newStartVnode`指向`span[key=2]`。
+`newStartVnode`元素`p[key=3]`根据`key`值比较，`elmToMove`会指向`footer[key=3]`，但因为它们标签名不一样，所以`sameVNode`判断会返回`false`。所以直接插入到`a`前面，页面中`dom`变为`p[key=3]、a、div[key=1]、footer[key=3]、span[key=2]、p`，`newStartVnode`指向`span[key=2]`。
 
-第二次`while`循环，同样头尾都不可复用，所以会走到第七种情况，`newStartVnode`元素`span[key=2]`根据`key`值比较，`elmToMove`会指向`span[k=2]`，两元素可以复用，`span[k=2]`会被插入到`a`前面，页面中`dom`变为`p[key=1]、span[k=2]、a、div[k=1]、footer[k=3]`，`newStartVnode`指向`div`。同时`oldCh`变为[`a`, `div[k=1]`, `p`, `footer[k=3]`, undefined]。
+第二次`while`循环，同样头尾都不可复用，所以会走到第七种情况，`newStartVnode`元素`span[key=2]`根据`key`值比较，`elmToMove`会指向`span[k=2]`，两元素可以复用，`span[k=2]`会被插入到`a`前面，页面中`dom`变为`p[key=1]、span[key=2]、a、div[key=1]、footer[k=3]、p`，`newStartVnode`指向`div`。同时`oldCh`变为[`a`, `div[key=1]`, `footer[k=3]`, undefined, `p`]。
 
-第三次`while`循环，`oldEndVnode`返回`undefined`所以会走到第二种情况。页面中`dom`不变，`oldEndVnode`指向`footer[k=3]`。
+第三次`while`循环，`oldEndVnode`和`newStartVnode`都是`p`，所以走到第六种情况，`dom`中最后的`p`元素会插入到`a`元素，页面中`dom`顺序变为`p[key=1]、span[key=2]、p、a、div[key=1]、footer[k=3]`，`oldEndVnode`前移一位指向了`undefined`，`newStartVnode`后移一位指向`div[key=1]`。
 
-第四次`while`循环，头尾依然不可复用，走到第七种情况。`newStartVnode`元素`div`没有`key`值，直接插入到`a`之前，页面中`dom`变为`p[key=1]、span[k=2]、div、a、div[k=1]、footer[k=3]`，`newStartVnode`指向`footer[key=3]`。
+第四次`while`循环，`oldEndVnode`返回`undefined`所以会走到第二种情况。页面中`dom`不变，`oldEndVnode`指向`footer[k=3]`。
 
-第五次`while`循环，`oldEndVnode`和`newStartVnode`都指向`footer[key=3]`，走到第六种情况。`footer[key=3]`元素会把插入到`a`元素之前。此时页面中`dom`变为`p[key=1]、span[k=2]、div、footer[k=3]、a、div[k=1]`，`oldEndVnode`指向`div[k=1]`，`newStartVnode`指向超出`newCh`范围，指向`undefined`。
+第五次`while`循环，依然头尾都不可复用，走到第七种情况，`newStartVnode`根据`key=1`找到可以复用的`div[key=1]`，该元素会插入到`a`元素之前，页面中的`dom`变为`p[key=1]、span[key=2]、p、div[key=1]、a、footer[k=3]`，同时`oldCh`变为[`a`, undefined, `footer[k=3]`, undefined, `p`]，`，`newStartVnode`后移一位指向`a`。
 
-这时`newStartIdx`会大于`newEndIdx`，所以会终止循环。与之前例子一样，最终会删除多余的`a、div[k=1]`。
+第六次`while`循环，`newStartVnode`和`oldStartVnode`都指向`a`，可以直接复用走到第三种情况。页面中`dom`不变，`newStartVnode`后移一位指向`span`，`oldStartVnode`后移一位指向`undefined`。
+
+第七次`while`循环，`oldStartVnode`返回`undefined`所以会走到第一种情况。页面中`dom`不变，`oldStartVnode`指向`footer[k=3]`。
+
+第八次`while`循环，新旧没有比较的子元素都只剩一个，且不可复用，会走到第七种情况，页面中会创建`span`，并插入到`footer[k=3]`之前。此时页面中`dom`变为`p[key=1]、span[key=2]、p、div[key=1]、a、span、footer[k=3]`，`newStartVnode`指向超出`newCh`范围，指向`undefined`。
+
+这时`newStartIdx`会大于`newEndIdx`，所以会终止循环。与之前例子一样，最终会删除多余的`footer[k=3]`。
 
 以上基本就是`vdom`的`diff`相关主要内容。
