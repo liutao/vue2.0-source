@@ -72,7 +72,7 @@ function Vue (options) {
 }
 ```
 
-首先判断如果是生产环境，且不是通过`new`关键字来创建对象的话，就在控制台打印一个`warning`，之后调用了`this._init(options)`函数。
+首先判断如果是不是生产环境，且不是通过`new`关键字来创建对象的话，就在控制台打印一个`warning`，之后调用了`this._init(options)`函数。
 
 下面的几个函数，分别在`Vue.prototype`原型上绑定了一些实例方法。关于`Vue`的[静态方法](Vue-globals.md)和[实例方法](Vue实例属性.md)，我分别单列出来，这样看起来可以更加清晰。
 
