@@ -69,7 +69,7 @@ export { compile, compileToFunctions }
 
 * `staticKeys`。静态关键词，包括`staticClass,staticStyle`。
 
-上面这些方法或者属性，在编译模板时会用到。这里知识简单的列出来它们的用途，方便看一眼。
+上面这些方法或者属性，在编译模板时会用到。这里只是简单的列出来它们的用途，方便看一眼。
 
 我们来看`createCompiler`函数的实现。
 
