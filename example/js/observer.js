@@ -27,6 +27,7 @@ function Dep(){
 
 	this.addSub = function (watcher) {
 		this.subs.push(watcher);
+		console.log(this.subs.length);
 	}
 
 	this.removeSub = function (watcher) {

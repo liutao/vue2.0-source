@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8' />
+	<title></title>
+	<script type="text/javascript" src="https://unpkg.com/vue"></script>
+</head>
+<body>
+<div id="app">
+	<p>{{xx}}{{a}}{{b}}</p>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		el: '#app',
+		data: {
+			a: 1,
+			b: 2
+		},
+		computed:{
+			xx(){
+				console.log(1);
+				return this.a;
+			}
+		},
+		mounted(){
+			this.a = 'a';
+			console.log(2);
+		},
+		watch:{
+			a(){
+				console.log(3);
+				this.b = 'b';
+			},
+			b(){
+				console.log(4);
+			}
+		}
+	})
+</script>
+</body>
+</html>

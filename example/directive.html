@@ -8,16 +8,19 @@
 <body>
 <div id="app">
 	<p  v-demo:foo.a.b = 'demo_value'></p>
+	<div>{{test.a}}</div>
 </div>
 <script type="text/javascript">
 	var vue = new Vue({
 		data: {
-			demo_value: 'test'
+			demo_value: 'test',
+			test: {a: 1}
 		},
 		directives: {
 			demo: {
-				bind: (el, binding)=>{
-					console.log(el, binding);
+				bind: (el, binding, vnode)=>{
+					console.log(vnode.context.$set, el, binding);
+					vnode.context.$set(vnode.context.test, 'a',  2);
 				}
 			}
 		}

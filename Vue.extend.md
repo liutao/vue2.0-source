@@ -55,7 +55,7 @@ export function initExtend (Vue: GlobalAPI) {
     }
 ```
 
-`Super`保存了当前对象，这里是`Vue`本身，`SuperId`是`Vue.cid`即0。`extendOptions._Ctor`用于缓存构造函数，在`Vue`源码中，暂未找到它的用途。
+`Super`保存了当前对象，这里是`Vue`本身，`SuperId`是`Vue.cid`即0。`extendOptions._Ctor`用于缓存构造函数，我们在使用自定子组件的时候会调用`Vue.extend`，初次生成`vnode`的时候生成新构造函数并缓存，如果页面数据有跟新，则会重新生成`vnode`并做`diff`，在第二次生成`vnode`过程中给，调用`Vue.extend`就回直接从缓存中取。
 
 之后定义了对象`Sub`，并给它添加了一系列的全局方法，我们看一下`Sub`对象上，有哪些全局的属性：
 

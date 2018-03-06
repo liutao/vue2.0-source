@@ -8,7 +8,7 @@
 <body>
 <div id="app">
 	{{name}}
-	<my-component></my-component>
+	<my-component><p>a</p></my-component>
 	<my-another-component></my-another-component>
 </div>
 <script>
@@ -18,7 +18,7 @@
 			},
 			components: {
 				myComponent: {
-					template: `<div>test{{test}}</div>`,
+					template: `<div>test{{test}}<slot></slot></div>`,
 					data(){
 						return {
 							test: '哈哈哈哈'
