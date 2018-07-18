@@ -54,7 +54,9 @@ Vue
 
         |— server 服务端渲染相关
 
-        |— sfc 暂时未知
+        |— sfc
+
+            |— parser.js 包含了单文件 Vue 组件 (*.vue) 的解析逻辑。在 vue-template-compiler 包中被使用。
 
         |—  shared 共享的工具方法
 
